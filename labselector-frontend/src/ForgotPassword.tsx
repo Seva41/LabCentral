@@ -11,7 +11,7 @@ function ForgotPassword() {
       const res = await axios.post('/api/request_password_reset', { email });
       // In a real scenario, just show "Check your email"
       setMessage('Check your email for a reset link (in dev, token is in the response).');
-      console.log('Reset token (dev): ', res.data.token);
+      console.log('Reset token (dev): ', res.data.token); // DEV ONLY
     } catch (error: any) {
       setMessage('Something went wrong');
     }

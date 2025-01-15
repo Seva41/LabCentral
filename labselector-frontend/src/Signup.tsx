@@ -21,7 +21,7 @@ function Signup() {
 
     try {
       // Send signup request to backend
-      await axios.post('/api/signup', { email, password });
+      await axios.post('/api/signup', { email, password, confirmPassword });
       alert('Signup successful. You can now log in!');
       navigate('/login');
     } catch (err: any) {
