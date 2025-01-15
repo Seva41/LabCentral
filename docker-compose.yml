@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  webapp:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+
+  exercise_container:
+    image: kalilinux/kali-rolling
+    container_name: exercise_container
+    stdin_open: true
+    tty: true
+    ports:
+      - "2222:22"
+    command: ["/bin/bash"]
