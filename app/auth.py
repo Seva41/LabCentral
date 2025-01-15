@@ -12,9 +12,13 @@ def signup():
     data = request.json
     email = data.get('email')
     password = data.get('password')
+    confirm_password = data.get('confirmPassword')
 
     if User.query.filter_by(email=email).first():
         return jsonify({'error': 'Email already taken'}), 400
+
+    if not password or not confirm_password or password != confirm_password:
+        return jsonify({'error': 'Passwords do not match'}), 400
 
     new_user = User(email=email)
     new_user.set_password(password)
