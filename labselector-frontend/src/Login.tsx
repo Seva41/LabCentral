@@ -1,5 +1,6 @@
 // src/Login.tsx
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from './AuthContext.tsx';
 import { useNavigate } from 'react-router-dom';
@@ -46,6 +47,7 @@ function Login() {
           />
         </div>
         <button className="btn btn-primary w-100">Login</button>
+        <p><Link to="/forgot-password">Forgot password?</Link></p>
       </form>
     </div>
   );

@@ -7,6 +7,9 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
 
+    reset_token = db.Column(db.String(128), nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
+
     # For storing completed exercise IDs
     completed_exercises = db.relationship('CompletedExercise', backref='user', lazy=True)
 

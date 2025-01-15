@@ -2,10 +2,15 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext.tsx';
+
 import ExerciseList from './ExerciseList.tsx';
 import ExerciseDetail from './ExerciseDetail.tsx';
+
 import Login from './Login.tsx';
 import Signup from './Signup.tsx';
+
+import ForgotPassword from './ForgotPassword.tsx';
+import ResetPassword from './ResetPassword.tsx';
 
 function PrivateRoute({ children }: { children: JSX.Element }) {
   const { token } = useAuth();
@@ -93,6 +98,8 @@ function App() {
         {/* Public routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Catch-all: redirect unknown paths */}
         <Route path="*" element={<Navigate to="/" />} />
