@@ -3,3 +3,5 @@ flask_sqlalchemy
 flask_login
 docker
 flask-cors
+flask_bcrypt
+pyjwt
