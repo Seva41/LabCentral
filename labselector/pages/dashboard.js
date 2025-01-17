@@ -1,0 +1,68 @@
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
+export default function Dashboard() {
+  const [exercises, setExercises] = useState([]);
+  const [completed, setCompleted] = useState([]);
+
+  useEffect(() => {
+    const fetchExercises = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        const [allExercises, userExercises] = await Promise.all([
+          axios.get('http://localhost:5000/api/exercises', { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get('http://localhost:5000/api/user_exercises', { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        setExercises(allExercises.data);
+        setCompleted(userExercises.data.completed_exercises);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchExercises();
+  }, []);
+
+  const markCompleted = async (exerciseId) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.post(
+        'http://localhost:5000/api/complete_exercise',
+        { exercise_id: exerciseId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCompleted((prev) => [...prev, exerciseId]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">Dashboard de Ejercicios</h1>
+        <ul className="space-y-4">
+          {exercises.map((exercise) => (
+            <li
+              key={exercise.id}
+              className={`p-4 rounded-lg shadow-md ${
+                completed.includes(exercise.id) ? 'bg-green-100' : 'bg-white'
+              }`}
+            >
+              <h2 className="text-xl font-semibold">{exercise.title}</h2>
+              <p className="text-gray-600">Estado: {completed.includes(exercise.id) ? 'Completado' : 'Pendiente'}</p>
+              {!completed.includes(exercise.id) && (
+                <button
+                  onClick={() => markCompleted(exercise.id)}
+                  className="px-4 py-2 mt-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600"
+                >
+                  Marcar como Completado
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
