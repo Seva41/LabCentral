@@ -1,4 +1,3 @@
-# app/models.py
 from . import db
 from flask_bcrypt import generate_password_hash, check_password_hash
 
@@ -10,7 +9,6 @@ class User(db.Model):
     reset_token = db.Column(db.String(128), nullable=True)
     reset_token_expiry = db.Column(db.DateTime, nullable=True)
 
-    # For storing completed exercise IDs
     completed_exercises = db.relationship('CompletedExercise', backref='user', lazy=True)
 
     def set_password(self, password):
@@ -23,3 +21,13 @@ class CompletedExercise(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     exercise_id = db.Column(db.Integer, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class Exercise(db.Model):
+    __tablename__ = 'exercises'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+
+    def __repr__(self):
+        return f"<Exercise {self.id}: {self.title}>"
+
