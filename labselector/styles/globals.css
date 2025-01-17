@@ -1,3 +1,35 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Garantiza que html, body y #__next ocupen el 100% del viewport */
+html, body, #__next {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Diseño principal de la aplicación */
+  .layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  /* El contenido principal toma todo el espacio disponible menos el footer */
+  .content {
+    flex: 1;
+    min-height: calc(100vh - 4rem); /* Ajusta 4rem según la altura del footer */
+  }
+  
+  /* Estilos para el footer */
+  footer {
+    height: 4rem; /* Altura fija del footer */
+    background-color: #1a202c; /* Gris oscuro */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  
