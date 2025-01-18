@@ -1,30 +1,37 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import { createContext, useState, useContext } from "react";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  // Cargar el token desde localStorage solo en el cliente
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    if (storedToken) {
-      setToken(storedToken);
-    }
-  }, []);
-
-  const login = (newToken) => {
-    localStorage.setItem("token", newToken);
+  const login = async (newToken) => {
     setToken(newToken);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/user", {
+        headers: { Authorization: `Bearer ${newToken}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsAdmin(data.is_admin);
+      } else {
+        console.error("Failed to fetch user info");
+      }
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
     setToken(null);
+    setIsAdmin(false);
   };
 
   return (
-    <AuthContext.Provider value={{ token, login, logout }}>
+    <AuthContext.Provider value={{ token, isAdmin, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

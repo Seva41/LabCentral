@@ -132,3 +132,45 @@ def stop_exercise(exercise_id):
         return jsonify({'error': 'Container not found'}), 404
     except docker.errors.APIError as e:
         return jsonify({'error': f'Failed to stop container: {str(e)}'}), 500
+
+# Admin routes
+@exercise_blueprint.route('/api/exercise', methods=['POST'])
+def add_exercise():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    decoded = decode_token(token)
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user = User.query.get(decoded['user_id'])
+    if not user or not user.is_admin:
+        return jsonify({'error': 'Permission denied'}), 403
+
+    data = request.json
+    new_exercise = Exercise(
+        title=data['title'],
+        description=data['description'],
+        docker_image=data['docker_image'],
+        port=data['port']
+    )
+    db.session.add(new_exercise)
+    db.session.commit()
+    return jsonify({'message': 'Exercise added successfully'}), 201
+
+@exercise_blueprint.route('/api/exercise/<int:exercise_id>', methods=['DELETE'])
+def delete_exercise(exercise_id):
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    decoded = decode_token(token)
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user = User.query.get(decoded['user_id'])
+    if not user or not user.is_admin:
+        return jsonify({'error': 'Permission denied'}), 403
+
+    exercise = Exercise.query.get(exercise_id)
+    if not exercise:
+        return jsonify({'error': 'Exercise not found'}), 404
+
+    db.session.delete(exercise)
+    db.session.commit()
+    return jsonify({'message': 'Exercise deleted successfully'}), 200

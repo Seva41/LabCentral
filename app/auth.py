@@ -1,11 +1,9 @@
-# app/auth.py
 import datetime
 import jwt
 from flask import Blueprint, request, jsonify, current_app
 from . import db, bcrypt
 from .models import User
 import secrets
-import datetime
 
 auth_blueprint = Blueprint('auth', __name__)
 
@@ -61,7 +59,7 @@ def request_password_reset():
         return jsonify({'message': 'If that email is registered, a reset was sent.'})
 
     # Generate a random token
-    token = secrets.token_hex(32)  # e.g. 64-hex char random string
+    token = secrets.token_hex(32)  # e.g., 64-hex char random string
     user.reset_token = token
     user.reset_token_expiry = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     db.session.commit()
@@ -95,3 +93,26 @@ def reset_password():
     db.session.commit()
 
     return jsonify({'message': 'Password updated successfully'})
+
+@auth_blueprint.route('/api/user', methods=['GET'])
+def get_user():
+    """Fetch details of the currently authenticated user."""
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        decoded = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({'error': 'Invalid token'}), 401
+
+    user = User.query.get(decoded.get('user_id'))
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    return jsonify({
+        'email': user.email,
+        'is_admin': user.is_admin
+    })
