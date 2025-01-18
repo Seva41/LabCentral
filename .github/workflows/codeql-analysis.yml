@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - main
-
+      
 jobs:
   analyze:
     name: Analyze Code
@@ -21,6 +21,9 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: javascript, python
+        token: ${{ secrets.PAT_TOKEN }}
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
+      with:
+        token: ${{ secrets.PAT_TOKEN }}
