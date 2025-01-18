@@ -1,3 +1,4 @@
+from flask_sqlalchemy import SQLAlchemy
 from . import db
 from flask_bcrypt import generate_password_hash, check_password_hash
 
@@ -23,11 +24,9 @@ class CompletedExercise(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 class Exercise(db.Model):
-    __tablename__ = 'exercises'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-
-    def __repr__(self):
-        return f"<Exercise {self.id}: {self.title}>"
+    description = db.Column(db.Text, nullable=False)
+    docker_image = db.Column(db.String(100), nullable=False)
+    port = db.Column(db.Integer, nullable=False)
 

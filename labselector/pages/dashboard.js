@@ -1,66 +1,71 @@
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
-import axios from 'axios';
+import { useAuth } from "../context/AuthContext";
+import { useState, useEffect } from "react";
 
-export default function Dashboard() {
+function Dashboard() {
+  const { token } = useAuth();
   const [exercises, setExercises] = useState([]);
-  const router = useRouter();
 
   useEffect(() => {
-    const fetchData = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/login'); // Redirige si no hay token
-        return;
-      }
-
+    const fetchExercises = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/user_exercises', {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await fetch("http://localhost:5000/api/exercises", {
+          headers: {
+            Authorization: `Bearer ${token}`, // Usa el token del contexto
+          },
         });
-        setExercises(response.data); // Asume que el backend devuelve una lista con los ejercicios y su estado
-      } catch (err) {
-        console.error(err);
-        router.push('/login'); // Redirige en caso de error
+
+        const data = await response.json();
+        setExercises(data);
+      } catch (error) {
+        console.error("Error fetching exercises:", error);
       }
     };
 
-    fetchData();
-  }, [router]);
+    if (token) fetchExercises();
+  }, [token]);
+
+  const startExercise = async (exerciseId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/exercise/${exerciseId}/start`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, // Incluye el token en la solicitud
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert(`Exercise started! Access it at: ${data.url}`);
+      } else {
+        alert(data.error || "Error starting exercise");
+      }
+    } catch (error) {
+      console.error("Error starting exercise:", error);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Dashboard de Ejercicios</h1>
-          <button
-            onClick={() => {
-              localStorage.removeItem('token');
-              router.push('/login');
-            }}
-            className="px-4 py-2 text-white bg-red-500 rounded-lg hover:bg-red-600 focus:ring-2 focus:ring-red-400"
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold text-center mb-6">Dashboard</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {exercises.map((exercise) => (
+          <div
+            key={exercise.id}
+            className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow"
           >
-            Cerrar Sesión
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {exercises.map((exercise) => (
-            <div
-              key={exercise.id}
-              className={`p-6 rounded-lg shadow-md bg-white ${
-                exercise.completed ? 'border-green-500 border-2' : 'border-gray-200'
-              }`}
-              onClick={() => router.push(`/exercise/${exercise.id}`)}
+            <h2 className="text-lg font-semibold">{exercise.title}</h2>
+            <p className="text-sm text-gray-600 mb-4">{exercise.description}</p>
+            <button
+              onClick={() => startExercise(exercise.id)}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
-              <h2 className="text-xl font-semibold">{exercise.title}</h2>
-              <p className="text-gray-600">
-                Estado: {exercise.completed ? 'Completado' : 'Pendiente'}
-              </p>
-            </div>
-          ))}
-        </div>
+              Start Exercise
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
+
+export default Dashboard;

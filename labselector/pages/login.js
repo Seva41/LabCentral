@@ -1,74 +1,63 @@
-import { useState } from 'react';
-import axios from 'axios';
-import { useRouter } from 'next/router';
-import Link from 'next/link';
+import { useState } from "react";
+import { useRouter } from "next/router";
+import { useAuth } from "../context/AuthContext";
 
-export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { login } = useAuth(); // Usa el contexto para manejar el token
   const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await axios.post('http://localhost:5000/api/login', { email, password });
-      localStorage.setItem('token', data.token);
-      router.push('/dashboard');
-    } catch {
-      alert('Credenciales inválidas');
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        login(data.token); // Usa el método login del contexto para guardar el token
+        router.push("/dashboard");
+      } else {
+        alert(data.error || "Login failed");
+      }
+    } catch (error) {
+      console.error("Failed to connect to the backend:", error);
+      alert("Failed to connect to the backend");
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl"
-      >
-        <h1 className="text-2xl font-bold text-center text-gray-800">Iniciar Sesión</h1>
-
-        <div className="space-y-4">
-          <input
-            type="email"
-            placeholder="Correo Electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
+    <div className="container mx-auto">
+      <h1 className="text-2xl font-bold text-center my-4">Login</h1>
+      <form onSubmit={handleLogin} className="max-w-md mx-auto p-4">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 w-full mb-4"
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="border p-2 w-full mb-4"
+          required
+        />
         <button
           type="submit"
-          className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-400"
+          className="bg-blue-500 text-white px-4 py-2 w-full"
         >
-          Iniciar Sesión
+          Login
         </button>
-
-        <div className="text-center space-y-2">
-          <button
-            type="button"
-            onClick={() => router.push('/reset-password')}
-            className="text-sm text-blue-500 hover:underline"
-          >
-            ¿Olvidaste tu contraseña?
-          </button>
-          <p className="text-sm text-gray-600">
-            ¿No tienes una cuenta?{' '}
-            <Link href="/signup" className="text-blue-500 hover:underline">
-              Regístrate aquí
-            </Link>
-          </p>
-        </div>
       </form>
     </div>
   );
 }
+
+export default Login;
