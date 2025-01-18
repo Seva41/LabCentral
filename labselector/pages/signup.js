@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -11,7 +12,7 @@ export default function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/signup', {
+      await axios.post('http://localhost:5000/api/signup', {
         email,
         password,
         confirmPassword,
@@ -67,9 +68,9 @@ export default function Signup() {
 
         <p className="text-sm text-center text-gray-600">
           ¿Ya tienes una cuenta?{' '}
-          <a href="/login" className="text-blue-500 hover:underline">
+          <Link href="/login" className="text-blue-500 hover:underline">
             Inicia Sesión
-          </a>
+          </Link>
         </p>
       </form>
     </div>

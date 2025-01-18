@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ export default function Login() {
       const { data } = await axios.post('http://localhost:5000/api/login', { email, password });
       localStorage.setItem('token', data.token);
       router.push('/dashboard');
-    } catch (err) {
+    } catch {
       alert('Credenciales inválidas');
     }
   };
@@ -62,9 +63,9 @@ export default function Login() {
           </button>
           <p className="text-sm text-gray-600">
             ¿No tienes una cuenta?{' '}
-            <a href="/signup" className="text-blue-500 hover:underline">
+            <Link href="/signup" className="text-blue-500 hover:underline">
               Regístrate aquí
-            </a>
+            </Link>
           </p>
         </div>
       </form>
