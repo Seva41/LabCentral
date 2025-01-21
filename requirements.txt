@@ -1,7 +1,8 @@
 flask
 flask_sqlalchemy
 flask_login
-docker
-flask-cors
+flask_cors
 flask_bcrypt
+flask_migrate
+docker
 pyjwt

@@ -2,13 +2,26 @@ version: '3.8'
 
 services:
   webapp:
-    build: .
+    build:
+      context: .
     ports:
       - "5000:5000"
     volumes:
       - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock  # Permitir acceso a Docker desde el backend
     environment:
       - FLASK_ENV=development
+    privileged: true  # Requerido para gestionar contenedores desde el backend
+
+  frontend:
+    build:
+      context: ./labselector
+    ports:
+      - "3000:3000"  # Puerto para la aplicación Next.js
+    volumes:
+      - ./labselector:/frontend
+    command: "npm run dev"  # Comando para iniciar Next.js en modo desarrollo
+    working_dir: /frontend
 
   exercise_container:
     image: kalilinux/kali-rolling

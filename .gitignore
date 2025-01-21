@@ -4,3 +4,4 @@ instance/
 *.db
 migrations/
 exercises/*
+__pycache__/
