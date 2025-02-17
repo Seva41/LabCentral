@@ -5,3 +5,4 @@ instance/
 migrations/
 exercises/*
 __pycache__/
+myenv/
