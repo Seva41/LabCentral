@@ -4,6 +4,7 @@ from flask import Blueprint, request, jsonify, current_app
 from . import db, bcrypt
 from .models import User
 import secrets
+from .exercise import decode_token, client
 
 auth_blueprint = Blueprint('auth', __name__)
 
@@ -116,3 +117,20 @@ def get_user():
         'email': user.email,
         'is_admin': user.is_admin
     })
+
+@auth_blueprint.route('/api/logout', methods=['POST'])
+def logout_user():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    decoded = decode_token(token)  # Similar lógica de decodificar JWT
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user_id = decoded.get('user_id')
+
+    # Lógica para remover contenedores activos de ese usuario:
+    containers = client.containers.list(all=True, filters={"name": f"user-{user_id}-"})
+    for container in containers:
+        container.remove(force=True)
+
+    # Aquí podrías invalidar el JWT si manejas lista de tokens, etc.
+    return jsonify({"message": "Logged out and containers removed."})

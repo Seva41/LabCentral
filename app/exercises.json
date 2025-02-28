@@ -1,14 +1,9 @@
 [
   {
-    "id": 1,
-    "name": "Basic Networking",
-    "docker_image": "exercise1",
-    "port": 8001
-  },
-  {
-    "id": 2,
-    "name": "SQL Injection",
-    "docker_image": "exercise2",
-    "port": 8002
+    "title": "CTF 2",
+    "description": "Test curso",
+    "dockerfile_path": "dockerfiles/ctf2",
+    "port": 8004
   }
+  
 ]
