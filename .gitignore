@@ -6,3 +6,6 @@ migrations/
 exercises/*
 __pycache__/
 myenv/
+
+# Cápsulas (para mantener secreto)
+/dockerfiles/*

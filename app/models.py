@@ -28,6 +28,5 @@ class Exercise(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    docker_image = db.Column(db.String(100), nullable=False)
+    dockerfile_path = db.Column(db.String(200), nullable=False)
     port = db.Column(db.Integer, nullable=False)
-

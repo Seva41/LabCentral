@@ -81,11 +81,10 @@ def start_exercise(exercise_id):
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
 
-    # Docker-specific logic
     try:
         container_name = f"user-{user_id}-exercise-{exercise_id}"
-        
-        # Check if the container already exists
+
+        # 1. Verificar si ya existe el contenedor
         try:
             existing_container = client.containers.get(container_name)
             if existing_container.status == "running":
@@ -94,17 +93,23 @@ def start_exercise(exercise_id):
                     'url': f'http://localhost:{exercise.port}'
                 })
             else:
-                existing_container.remove(force=True)  # Remove non-running container
+                existing_container.remove(force=True)
         except docker.errors.NotFound:
-            pass  # Continue if container does not exist
+            pass
 
-        # Start a new container
+        # 2. Construir la imagen en base a la carpeta dockerfile_path
+        image_tag = f"exercise-{exercise_id}"  # Por ejemplo, un nombre simple
+        build_path = exercise.dockerfile_path  # por ej. "dockerfiles/networking"
+        client.images.build(path=build_path, tag=image_tag)  
+
+        # 3. Correr el contenedor
         container = client.containers.run(
-            exercise.docker_image,
+            image_tag,  # La imagen recién construida
             detach=True,
             ports={'5000/tcp': exercise.port},
             name=container_name
         )
+
         return jsonify({
             'message': f'Exercise {exercise_id} started successfully',
             'url': f'http://localhost:{exercise.port}'
@@ -149,7 +154,7 @@ def add_exercise():
     new_exercise = Exercise(
         title=data['title'],
         description=data['description'],
-        docker_image=data['docker_image'],
+        dockerfile_path=data['dockerfile_path'],
         port=data['port']
     )
     db.session.add(new_exercise)

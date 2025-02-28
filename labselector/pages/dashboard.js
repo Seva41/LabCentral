@@ -8,6 +8,7 @@ function Dashboard() {
   const router = useRouter();
   const [exercises, setExercises] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [newExercise, setNewExercise] = useState({
     title: "",
@@ -82,9 +83,38 @@ function Dashboard() {
     }
   };
 
+  // Función para iniciar realmente el ejercicio en el backend
+  const startExercise = async (exerciseId) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/exercise/${exerciseId}/start`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+  
+      if (response.ok) {
+        if (data.url) {
+          window.open(data.url, "_blank");
+        } else {
+          alert(data.message || `Exercise ${exerciseId} started`);
+        }
+      } else {
+        alert(data.error || "Failed to start exercise");
+      }
+    } catch (error) {
+      console.error("Error starting exercise:", error);
+      alert("Error connecting to the backend");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
   const handleLogout = async () => {
     await logout();
-    // Redirige al login
     router.push("/login");
   };
 
@@ -120,7 +150,6 @@ function Dashboard() {
                 }`}
               />
             </div>
-            {/* Usa handleLogout en lugar de logout directo */}
             <button
               onClick={handleLogout}
               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -134,7 +163,7 @@ function Dashboard() {
           <div className="mb-6 p-4 bg-gray-200 dark:bg-gray-800 border rounded-lg">
             <h2 className="text-lg font-semibold mb-4">Admin Panel</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* ... inputs para newExercise ... */}
+              {/* inputs para newExercise.title, newExercise.description, etc. */}
             </div>
             <button
               onClick={addExercise}
@@ -154,10 +183,11 @@ function Dashboard() {
               <h2 className="text-lg font-semibold">{exercise.title}</h2>
               <p className="text-sm mb-4">{exercise.description}</p>
               <button
-                onClick={() => alert(`Exercise started: ${exercise.title}`)}
+                onClick={() => startExercise(exercise.id) }
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                disabled={loading}
               >
-                Start Exercise
+                {loading ? "Starting..." : "Start Exercise"}
               </button>
               {isAdmin && (
                 <button
