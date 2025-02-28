@@ -25,10 +25,53 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
+
+  const logout = async () => {
+    if (!token) {
+      // Si no hay token, simplemente limpia el estado
+      setToken(null);
+      setIsAdmin(false);
+      return;
+    }
+
+    try {
+      // Llamas primero a /api/logout para que el backend
+      // remueva contenedores y haga la lógica necesaria
+      await fetch("http://localhost:5000/api/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Si quieres, luego puedes pedir ejercicios y detenerlos,
+      // o podrías hacerlo *antes* de /api/logout, según tu flujo.
+      // Por ejemplo, usando el mismo token:
+      const resp = await fetch("http://localhost:5000/api/user_exercises", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (resp.ok) {
+        const exercises = await resp.json();
+        if (Array.isArray(exercises)) {
+          for (const ex of exercises) {
+            if (!ex.completed) {
+              await fetch(`http://localhost:5000/api/exercise/${ex.id}/stop`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+              });
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error en logout:", err);
+    }
+
+    // Finalmente, resetea el estado
     setToken(null);
     setIsAdmin(false);
   };
+  
 
   return (
     <AuthContext.Provider value={{ token, isAdmin, login, logout }}>

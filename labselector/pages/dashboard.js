@@ -82,6 +82,12 @@ function Dashboard() {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    // Redirige al login
+    router.push("/login");
+  };
+
   return (
     <div
       className={`min-h-screen ${
@@ -93,8 +99,11 @@ function Dashboard() {
           <h1 className="text-2xl font-bold text-center">Dashboard</h1>
           <div className="flex items-center space-x-4">
             <div className="flex items-center">
-            {/* Sol (light mode) a la izquierda */}
-              <FaSun className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-50" : "opacity-100"}`} />
+              <FaSun
+                className={`text-gray-600 dark:text-gray-300 ${
+                  darkMode ? "opacity-50" : "opacity-100"
+                }`}
+              />
               <label className="relative inline-block w-10 h-6 mx-2">
                 <input
                   type="checkbox"
@@ -103,14 +112,17 @@ function Dashboard() {
                   onChange={toggleDarkMode}
                 />
                 <div className="w-10 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-500 transition"></div>
-                {/* Control deslizante */}
                 <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full peer-checked:translate-x-4 transition"></div>
               </label>
-              {/* Luna (dark mode) a la derecha */}
-              <FaMoon className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-100" : "opacity-50"}`} />
+              <FaMoon
+                className={`text-gray-600 dark:text-gray-300 ${
+                  darkMode ? "opacity-100" : "opacity-50"
+                }`}
+              />
             </div>
+            {/* Usa handleLogout en lugar de logout directo */}
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
             >
               Logout
@@ -122,38 +134,7 @@ function Dashboard() {
           <div className="mb-6 p-4 bg-gray-200 dark:bg-gray-800 border rounded-lg">
             <h2 className="text-lg font-semibold mb-4">Admin Panel</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Title"
-                value={newExercise.title}
-                onChange={(e) => setNewExercise({ ...newExercise, title: e.target.value })}
-                className="p-2 border rounded"
-              />
-              <input
-                type="text"
-                placeholder="Description"
-                value={newExercise.description}
-                onChange={(e) =>
-                  setNewExercise({ ...newExercise, description: e.target.value })
-                }
-                className="p-2 border rounded"
-              />
-              <input
-                type="text"
-                placeholder="Docker Image"
-                value={newExercise.docker_image}
-                onChange={(e) =>
-                  setNewExercise({ ...newExercise, docker_image: e.target.value })
-                }
-                className="p-2 border rounded"
-              />
-              <input
-                type="number"
-                placeholder="Port"
-                value={newExercise.port}
-                onChange={(e) => setNewExercise({ ...newExercise, port: e.target.value })}
-                className="p-2 border rounded"
-              />
+              {/* ... inputs para newExercise ... */}
             </div>
             <button
               onClick={addExercise}
