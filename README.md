@@ -40,7 +40,7 @@ El proyecto se compone principalmente de:
   - Carpeta con los archivos de páginas como `login.js`, `signup.js`, `dashboard.js`, etc.
   - Proporciona la interfaz de usuario.
 - **Docker**:
-  - Cada ejercicio define un contenedor Docker independiente.
+  - Cada ejercicio define un contenedor Docker independiente dentro de la carpeta `dockerfiles/` (Leer README correspondiente para más información).
   - El proyecto se orquesta con Docker Compose.
 
 ## Instrucciones de Despliegue
@@ -163,7 +163,5 @@ Para crear un usuario de prueba (por ejemplo, un administrador) en la base de da
 Cada ejercicio se lanza como un contenedor Docker independiente, basado en la imagen definida en la base de datos. Al hacer clic en **Start Exercise**, el backend:
 
 1. Llama a la API de Docker para crear o reutilizar un contenedor.
-2. Expone el puerto definido en la base de datos (`exercise.port`).
+2. Expone el puerto definido en la base de datos (`exercise.port`) mediante un proxy interno.
 3. Devuelve la URL para que el usuario acceda.
-
-> Por defecto, la URL será `http://<IP-SERVIDOR>:<PUERTO_EJERCICIO>`.
