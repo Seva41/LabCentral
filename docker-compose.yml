@@ -1,4 +1,7 @@
-version: '3.8'
+networks:
+  lab_app_net:
+    name: lab_app_net
+    driver: bridge
 
 services:
   webapp:
@@ -12,6 +15,8 @@ services:
     environment:
       - FLASK_ENV=development
     privileged: true  # Requerido para gestionar contenedores desde el backend
+    networks:
+      - lab_app_net
 
   frontend:
     build:
@@ -22,6 +27,8 @@ services:
       - ./labselector:/frontend
     command: "npm run dev"  # Comando para iniciar Next.js en modo desarrollo
     working_dir: /frontend
+    networks:
+      - lab_app_net
 
   exercise_container:
     image: kalilinux/kali-rolling
@@ -31,3 +38,5 @@ services:
     ports:
       - "2222:22"
     command: ["/bin/bash"]
+    networks:
+      - lab_app_net

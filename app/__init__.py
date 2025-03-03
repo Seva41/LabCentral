@@ -5,6 +5,8 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 import os
 
+
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, '..', 'instance', 'app.db')
 
@@ -25,7 +27,7 @@ def create_app():
 
     with app.app_context():
         from .models import Exercise
-
+        from .proxy import proxy_blueprint
         from .auth import auth_blueprint
         from .exercise import exercise_blueprint
         app.register_blueprint(auth_blueprint)
@@ -33,6 +35,8 @@ def create_app():
 
         # Crea las tablas si no existen
         db.create_all()
+
+        app.register_blueprint(proxy_blueprint)
 
         # Poblar la base de datos con ejercicios si está vacía
         # Reemplaza el bloque del if not Exercise.query.first():
