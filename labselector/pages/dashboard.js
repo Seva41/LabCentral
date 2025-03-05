@@ -11,6 +11,9 @@ function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const [statusMessage, setStatusMessage] = useState("");
+  const [showSpinner, setShowSpinner] = useState(false);
+
   // Para agregar un nuevo ejercicio (solo si eres admin)
   const [newExercise, setNewExercise] = useState({
     title: "",
@@ -128,27 +131,40 @@ function Dashboard() {
   // Iniciar ejercicio
   const startExercise = async (exerciseId) => {
     setLoading(true);
+    setStatusMessage("Iniciando contenedor, por favor espera...");
+    setShowSpinner(true);
+
     try {
       const response = await fetch(`http://localhost:5000/api/exercise/${exerciseId}/start`, {
         method: "POST",
-        credentials: "include", // Envía la cookie
+        credentials: "include",
       });
       const data = await response.json();
 
       if (response.ok) {
-        // El backend retorna {proxy_url: "/api/exercise/<id>/proxy"}
+        // Recibimos data.proxy_url, p.ej: "/api/exercise/1/proxy"
         if (data.proxy_url) {
-          // Abre el contenedor (app Flask) en otra pestaña
-          window.open(`http://localhost:5000${data.proxy_url}`, "_blank");
+          // Espera 4 segundos antes de abrir la nueva pestaña
+          setTimeout(() => {
+            window.open(`http://localhost:5000${data.proxy_url}`, "_blank");
+            setStatusMessage(""); 
+            setShowSpinner(false);
+          }, 4000);
         } else {
           alert(data.message || `Exercise ${exerciseId} started`);
+          setShowSpinner(false);
+          setStatusMessage("");
         }
       } else {
         alert(data.error || "Failed to start exercise");
+        setShowSpinner(false);
+        setStatusMessage("");
       }
     } catch (error) {
       console.error("Error starting exercise:", error);
       alert("Error connecting to the backend");
+      setShowSpinner(false);
+      setStatusMessage("");
     } finally {
       setLoading(false);
     }
@@ -234,7 +250,17 @@ function Dashboard() {
             </button>
           </div>
         </div>
-
+  
+        {/* Mensaje/Spinner de estado */}
+        {statusMessage && (
+          <div className="mb-4 flex items-center space-x-3">
+            {showSpinner && (
+              <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            )}
+            <span>{statusMessage}</span>
+          </div>
+        )}
+  
         {/* Admin Panel */}
         {isAdmin && (
           <div className="mb-6 p-4 bg-gray-200 dark:bg-gray-800 border rounded-lg">
@@ -244,28 +270,39 @@ function Dashboard() {
                 type="text"
                 placeholder="Exercise Title"
                 value={newExercise.title}
-                onChange={(e) => setNewExercise({ ...newExercise, title: e.target.value })}
+                onChange={(e) =>
+                  setNewExercise({ ...newExercise, title: e.target.value })
+                }
                 className="p-2 border rounded"
               />
               <input
                 type="text"
                 placeholder="Description"
                 value={newExercise.description}
-                onChange={(e) => setNewExercise({ ...newExercise, description: e.target.value })}
+                onChange={(e) =>
+                  setNewExercise({ ...newExercise, description: e.target.value })
+                }
                 className="p-2 border rounded"
               />
               <input
                 type="text"
                 placeholder="Dockerfile Path"
                 value={newExercise.docker_image}
-                onChange={(e) => setNewExercise({ ...newExercise, docker_image: e.target.value })}
+                onChange={(e) =>
+                  setNewExercise({
+                    ...newExercise,
+                    docker_image: e.target.value,
+                  })
+                }
                 className="p-2 border rounded"
               />
               <input
                 type="number"
                 placeholder="Port"
                 value={newExercise.port}
-                onChange={(e) => setNewExercise({ ...newExercise, port: e.target.value })}
+                onChange={(e) =>
+                  setNewExercise({ ...newExercise, port: e.target.value })
+                }
                 className="p-2 border rounded"
               />
             </div>
@@ -277,7 +314,7 @@ function Dashboard() {
             </button>
           </div>
         )}
-
+  
         {/* Lista de ejercicios */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {exercises.map((exercise) => (
