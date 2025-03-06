@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
-import Link from "next/link";
-import { useAuth } from "../context/AuthContext";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth(); // Usa el contexto para manejar el token
   const router = useRouter();
 
   const handleLogin = async (e) => {
@@ -16,10 +13,12 @@ function Login() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
+        credentials: "include",
       });
       const data = await response.json();
+
       if (response.ok) {
-        login(data.token); // Usa el método login del contexto para guardar el token
+        console.log("Login exitoso, redirigiendo a /dashboard...");
         router.push("/dashboard");
       } else {
         alert(data.error || "Login failed");
@@ -66,15 +65,15 @@ function Login() {
 
         <div className="text-sm text-center text-gray-600">
           <p>
-            <Link href="/reset-password" className="text-blue-500 hover:underline">
+            <a href="/reset-password" className="text-blue-500 hover:underline">
               ¿Olvidaste tu contraseña?
-            </Link>
+            </a>
           </p>
           <p className="mt-2">
             ¿No tienes una cuenta?{" "}
-            <Link href="/signup" className="text-blue-500 hover:underline">
+            <a href="/signup" className="text-blue-500 hover:underline">
               Regístrate aquí
-            </Link>
+            </a>
           </p>
         </div>
       </form>

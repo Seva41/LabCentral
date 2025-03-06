@@ -1,4 +1,7 @@
-version: '3.8'
+networks:
+  lab_app_net:
+    name: lab_app_net
+    driver: bridge
 
 services:
   webapp:
@@ -8,20 +11,25 @@ services:
       - "5000:5000"
     volumes:
       - .:/app
-      - /var/run/docker.sock:/var/run/docker.sock  # Permitir acceso a Docker desde el backend
+      - ./dockerfiles:/app/dockerfiles
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - FLASK_ENV=development
-    privileged: true  # Requerido para gestionar contenedores desde el backend
+    privileged: true
+    networks:
+      - lab_app_net
 
   frontend:
     build:
       context: ./labselector
     ports:
-      - "3000:3000"  # Puerto para la aplicación Next.js
+      - "3000:3000"
     volumes:
       - ./labselector:/frontend
-    command: "npm run dev"  # Comando para iniciar Next.js en modo desarrollo
+    command: "npm run dev"
     working_dir: /frontend
+    networks:
+      - lab_app_net
 
   exercise_container:
     image: kalilinux/kali-rolling
@@ -31,3 +39,5 @@ services:
     ports:
       - "2222:22"
     command: ["/bin/bash"]
+    networks:
+      - lab_app_net
