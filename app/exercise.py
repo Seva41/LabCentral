@@ -6,6 +6,7 @@ import os
 import re
 from werkzeug.utils import secure_filename
 import zipfile
+import shutil
 
 exercise_blueprint = Blueprint('exercise', __name__)
 client = docker.from_env()
@@ -180,8 +181,26 @@ def delete_exercise(exercise_id):
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
 
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    dockerfiles_root = os.path.join(base_dir, '..', 'dockerfiles')
+
+    relative_path = exercise.dockerfile_path.replace('dockerfiles/', '').strip('/')
+
+    # Ruta absoluta a la carpeta
+    folder_path = os.path.join(dockerfiles_root, relative_path)
+
+    # 1. Elimina el registro de la BD
     db.session.delete(exercise)
     db.session.commit()
+
+    # 2. Borra la carpeta (si existe)
+    if os.path.isdir(folder_path):
+        try:
+            shutil.rmtree(folder_path)
+            print(f"Carpeta '{folder_path}' eliminada")
+        except Exception as e:
+            print(f"No se pudo eliminar la carpeta: {e}")
+    
     return jsonify({'message': 'Exercise deleted successfully'}), 200
 
 @exercise_blueprint.route('/api/exercise_with_zip', methods=['POST'])
