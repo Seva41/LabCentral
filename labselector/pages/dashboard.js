@@ -4,8 +4,6 @@ import { FaSun, FaMoon } from "react-icons/fa";
 
 function Dashboard() {
   const router = useRouter();
-
-  // Estados
   const [exercises, setExercises] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -14,25 +12,25 @@ function Dashboard() {
   const [statusMessage, setStatusMessage] = useState("");
   const [showSpinner, setShowSpinner] = useState(false);
 
-  // Para agregar un nuevo ejercicio (solo si eres admin)
+  // Datos del nuevo ejercicio
   const [newExercise, setNewExercise] = useState({
     title: "",
     description: "",
-    docker_image: "",
     port: "",
   });
 
-  // 1. Verificar si el usuario está logeado y si es admin
+  // Archivo ZIP (en vez de Dockerfile)
+  const [exerciseZip, setExerciseZip] = useState(null);
+
   useEffect(() => {
+    // Verificar si el usuario está logueado y es admin
     const fetchUser = async () => {
       try {
-        // /api/user dará {email, is_admin} si la cookie es válida
         const res = await fetch("http://localhost:5000/api/user", {
-          credentials: "include", // Imprescindible para enviar la cookie
+          credentials: "include",
         });
         const data = await res.json();
         if (data.error) {
-          // no hay sesión, regresar a /login
           router.push("/login");
         } else {
           setIsAdmin(data.is_admin);
@@ -45,8 +43,8 @@ function Dashboard() {
     fetchUser();
   }, [router]);
 
-  // 2. Cargar la lista de ejercicios (si el usuario está logeado)
   useEffect(() => {
+    // Cargar lista de ejercicios
     const fetchExercises = async () => {
       try {
         const response = await fetch("http://localhost:5000/api/exercises", {
@@ -69,48 +67,47 @@ function Dashboard() {
     document.documentElement.classList.toggle("dark", !darkMode);
   };
 
-  // Agregar un ejercicio (solo admin)
-  const addExercise = async () => {
+  // Subir ZIP + creación del ejercicio
+  const addExerciseWithZip = async () => {
+    if (!exerciseZip) {
+      alert("Please select a ZIP file first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", newExercise.title);
+    formData.append("description", newExercise.description);
+    formData.append("port", newExercise.port);
+    formData.append("zipfile", exerciseZip); // El input file (ZIP)
+
     try {
-      const response = await fetch("http://localhost:5000/api/exercise", {
+      const response = await fetch("http://localhost:5000/api/exercise_with_zip", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Usa cookies
-        body: JSON.stringify({
-          title: newExercise.title,
-          description: newExercise.description,
-          dockerfile_path: newExercise.docker_image, 
-          port: newExercise.port,
-        }),
+        credentials: "include",
+        body: formData,
       });
 
       if (response.ok) {
         alert("Exercise added successfully");
-        // Como el endpoint retorna solo {message}, recarga la lista manualmente
+        // Recargar la lista de ejercicios
         const updatedRes = await fetch("http://localhost:5000/api/exercises", {
           credentials: "include",
         });
         const updatedExercises = await updatedRes.json();
         setExercises(updatedExercises);
 
-        // Limpia el form
-        setNewExercise({
-          title: "",
-          description: "",
-          docker_image: "",
-          port: "",
-        });
+        // Limpiar el form
+        setNewExercise({ title: "", description: "", port: "" });
+        setExerciseZip(null);
       } else {
         alert("Failed to add exercise");
       }
     } catch (error) {
-      console.error("Error adding exercise:", error);
+      console.error("Error adding exercise with zip:", error);
     }
   };
 
-  // Borrar ejercicio (solo admin)
+  // Borrar ejercicio (sólo admin)
   const deleteExercise = async (exerciseId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/exercise/${exerciseId}`, {
@@ -142,12 +139,11 @@ function Dashboard() {
       const data = await response.json();
 
       if (response.ok) {
-        // Recibimos data.proxy_url, p.ej: "/api/exercise/1/proxy"
         if (data.proxy_url) {
-          // Espera 4 segundos antes de abrir la nueva pestaña
+          // Espera 4s antes de abrir para dar tiempo a que arranque el contenedor
           setTimeout(() => {
             window.open(`http://localhost:5000${data.proxy_url}`, "_blank");
-            setStatusMessage(""); 
+            setStatusMessage("");
             setShowSpinner(false);
           }, 4000);
         } else {
@@ -170,7 +166,7 @@ function Dashboard() {
     }
   };
 
-  // Cerrar ejercicio
+  // Detener ejercicio
   const stopExercise = async (exerciseId) => {
     setLoading(true);
     try {
@@ -205,16 +201,12 @@ function Dashboard() {
         alert("Failed to logout");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Logout error:", error);
     }
   };
 
   return (
-    <div
-      className={`min-h-screen ${
-        darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"
-      }`}
-    >
+    <div className={`min-h-screen ${darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"}`}>
       <div className="container mx-auto p-4">
         {/* Encabezado */}
         <div className="flex justify-between items-center mb-6">
@@ -242,6 +234,7 @@ function Dashboard() {
                 }`}
               />
             </div>
+            {/* Botón Logout */}
             <button
               onClick={handleLogout}
               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -250,8 +243,8 @@ function Dashboard() {
             </button>
           </div>
         </div>
-  
-        {/* Mensaje/Spinner de estado */}
+
+        {/* Spinner / Mensajes de estado */}
         {statusMessage && (
           <div className="mb-4 flex items-center space-x-3">
             {showSpinner && (
@@ -260,8 +253,8 @@ function Dashboard() {
             <span>{statusMessage}</span>
           </div>
         )}
-  
-        {/* Admin Panel */}
+
+        {/* Panel de Admin (subida de ZIP) */}
         {isAdmin && (
           <div className="mb-6 p-4 bg-gray-200 dark:bg-gray-800 border rounded-lg">
             <h2 className="text-lg font-semibold mb-4">Admin Panel</h2>
@@ -285,18 +278,6 @@ function Dashboard() {
                 className="p-2 border rounded"
               />
               <input
-                type="text"
-                placeholder="Dockerfile Path"
-                value={newExercise.docker_image}
-                onChange={(e) =>
-                  setNewExercise({
-                    ...newExercise,
-                    docker_image: e.target.value,
-                  })
-                }
-                className="p-2 border rounded"
-              />
-              <input
                 type="number"
                 placeholder="Port"
                 value={newExercise.port}
@@ -305,16 +286,31 @@ function Dashboard() {
                 }
                 className="p-2 border rounded"
               />
+
+              {/* Subir ZIP */}
+              <input
+                type="file"
+                accept=".zip"
+                onChange={(e) => {
+                  if (e.target.files.length > 0) {
+                    setExerciseZip(e.target.files[0]);
+                  } else {
+                    setExerciseZip(null);
+                  }
+                }}
+                className="p-2 border rounded"
+              />
             </div>
             <button
-              onClick={addExercise}
+              onClick={addExerciseWithZip}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
-              Add Exercise
+              Add Exercise (ZIP)
             </button>
           </div>
         )}
-  
+
+
         {/* Lista de ejercicios */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {exercises.map((exercise) => (
@@ -324,12 +320,14 @@ function Dashboard() {
             >
               <h2 className="text-lg font-semibold">{exercise.title}</h2>
               <p className="text-sm mb-4">{exercise.description}</p>
+
+              {/* Botones Start / Stop */}
               <button
                 onClick={() => startExercise(exercise.id)}
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 disabled={loading}
               >
-                {loading ? "Starting..." : "Start Exercise"}
+                {loading ? "Starting..." : "Start"}
               </button>
               <button
                 onClick={() => stopExercise(exercise.id)}
@@ -338,6 +336,8 @@ function Dashboard() {
               >
                 {loading ? "Stopping..." : "Stop"}
               </button>
+
+              {/* Botón Delete solo si isAdmin */}
               {isAdmin && (
                 <button
                   onClick={() => deleteExercise(exercise.id)}
