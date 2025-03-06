@@ -6,24 +6,26 @@ function Dashboard() {
   const router = useRouter();
   const [exercises, setExercises] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
-  const [loading, setLoading] = useState(false);
+
+  // Diccionario: { [exerciseId]: "starting" | "stopping" | null }
+  const [loadingStates, setLoadingStates] = useState({});
+
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Texto y spinner global (arriba)
   const [statusMessage, setStatusMessage] = useState("");
   const [showSpinner, setShowSpinner] = useState(false);
 
-  // Datos del nuevo ejercicio
+  // Form para subir un nuevo ejercicio (ZIP)
   const [newExercise, setNewExercise] = useState({
     title: "",
     description: "",
     port: "",
   });
-
-  // Archivo ZIP (en vez de Dockerfile)
   const [exerciseZip, setExerciseZip] = useState(null);
 
+  // Verificar si el usuario está logeado y es admin
   useEffect(() => {
-    // Verificar si el usuario está logueado y es admin
     const fetchUser = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/user", {
@@ -43,8 +45,8 @@ function Dashboard() {
     fetchUser();
   }, [router]);
 
+  // Cargar la lista de ejercicios
   useEffect(() => {
-    // Cargar lista de ejercicios
     const fetchExercises = async () => {
       try {
         const response = await fetch("http://localhost:5000/api/exercises", {
@@ -67,18 +69,28 @@ function Dashboard() {
     document.documentElement.classList.toggle("dark", !darkMode);
   };
 
-  // Subir ZIP + creación del ejercicio
+  // Helper para actualizar el estado loadingStates
+  const setExerciseLoading = (exerciseId, state) => {
+    console.log(`Setting exercise ${exerciseId} to ${state}`);
+    setLoadingStates((prev) => ({ ...prev, [exerciseId]: state }));
+  };
+
+  // Retorna "Starting...", "Stopping...", o null si no está en proceso
+  const getLoadingLabel = (exerciseId) => {
+    return loadingStates[exerciseId] || null;
+  };
+
+  // Subir ZIP y crear nuevo ejercicio
   const addExerciseWithZip = async () => {
     if (!exerciseZip) {
       alert("Please select a ZIP file first.");
       return;
     }
-
     const formData = new FormData();
     formData.append("title", newExercise.title);
     formData.append("description", newExercise.description);
     formData.append("port", newExercise.port);
-    formData.append("zipfile", exerciseZip); // El input file (ZIP)
+    formData.append("zipfile", exerciseZip);
 
     try {
       const response = await fetch("http://localhost:5000/api/exercise_with_zip", {
@@ -89,14 +101,14 @@ function Dashboard() {
 
       if (response.ok) {
         alert("Exercise added successfully");
-        // Recargar la lista de ejercicios
+        // Recargar la lista
         const updatedRes = await fetch("http://localhost:5000/api/exercises", {
           credentials: "include",
         });
         const updatedExercises = await updatedRes.json();
         setExercises(updatedExercises);
 
-        // Limpiar el form
+        // Limpiar
         setNewExercise({ title: "", description: "", port: "" });
         setExerciseZip(null);
       } else {
@@ -107,16 +119,15 @@ function Dashboard() {
     }
   };
 
-  // Borrar ejercicio (sólo admin)
+  // Eliminar ejercicio (solo admin)
   const deleteExercise = async (exerciseId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/exercise/${exerciseId}`, {
         method: "DELETE",
         credentials: "include",
       });
-
       if (response.ok) {
-        setExercises(exercises.filter((exercise) => exercise.id !== exerciseId));
+        setExercises(exercises.filter((ex) => ex.id !== exerciseId));
       } else {
         alert("Failed to delete exercise");
       }
@@ -125,10 +136,12 @@ function Dashboard() {
     }
   };
 
-  // Iniciar ejercicio
+  // Iniciar
   const startExercise = async (exerciseId) => {
-    setLoading(true);
-    setStatusMessage("Iniciando contenedor, por favor espera...");
+    // MARCA SOLO ESTE EJERCICIO como "starting"
+    setExerciseLoading(exerciseId, "starting");
+
+    setStatusMessage("Iniciando contenedor...");
     setShowSpinner(true);
 
     try {
@@ -140,7 +153,7 @@ function Dashboard() {
 
       if (response.ok) {
         if (data.proxy_url) {
-          // Espera 4s antes de abrir para dar tiempo a que arranque el contenedor
+          // Retraso de 4 seg
           setTimeout(() => {
             window.open(`http://localhost:5000${data.proxy_url}`, "_blank");
             setStatusMessage("");
@@ -162,13 +175,16 @@ function Dashboard() {
       setShowSpinner(false);
       setStatusMessage("");
     } finally {
-      setLoading(false);
+      // Volver a null
+      setExerciseLoading(exerciseId, null);
     }
   };
 
-  // Detener ejercicio
+  // Detener
   const stopExercise = async (exerciseId) => {
-    setLoading(true);
+    // MARCA SOLO ESTE EJERCICIO como "stopping"
+    setExerciseLoading(exerciseId, "stopping");
+
     try {
       const response = await fetch(`http://localhost:5000/api/exercise/${exerciseId}/stop`, {
         method: "POST",
@@ -184,7 +200,8 @@ function Dashboard() {
       console.error("Error stopping exercise:", error);
       alert("Error connecting to the backend");
     } finally {
-      setLoading(false);
+      // Volver a null
+      setExerciseLoading(exerciseId, null);
     }
   };
 
@@ -206,18 +223,14 @@ function Dashboard() {
   };
 
   return (
-    <div className={`min-h-screen ${darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"}`}>
+    <div className={`${darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"} min-h-screen`}>
       <div className="container mx-auto p-4">
         {/* Encabezado */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-center">Dashboard</h1>
           <div className="flex items-center space-x-4">
             <div className="flex items-center">
-              <FaSun
-                className={`text-gray-600 dark:text-gray-300 ${
-                  darkMode ? "opacity-50" : "opacity-100"
-                }`}
-              />
+              <FaSun className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-50" : "opacity-100"}`} />
               <label className="relative inline-block w-10 h-6 mx-2">
                 <input
                   type="checkbox"
@@ -228,11 +241,7 @@ function Dashboard() {
                 <div className="w-10 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-500 transition"></div>
                 <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full peer-checked:translate-x-4 transition"></div>
               </label>
-              <FaMoon
-                className={`text-gray-600 dark:text-gray-300 ${
-                  darkMode ? "opacity-100" : "opacity-50"
-                }`}
-              />
+              <FaMoon className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-100" : "opacity-50"}`} />
             </div>
             {/* Botón Logout */}
             <button
@@ -244,7 +253,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Spinner / Mensajes de estado */}
+        {/* Mensaje global */}
         {statusMessage && (
           <div className="mb-4 flex items-center space-x-3">
             {showSpinner && (
@@ -254,7 +263,7 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Panel de Admin (subida de ZIP) */}
+        {/* Admin Panel */}
         {isAdmin && (
           <div className="mb-6 p-4 bg-gray-200 dark:bg-gray-800 border rounded-lg">
             <h2 className="text-lg font-semibold mb-4">Admin Panel</h2>
@@ -263,31 +272,24 @@ function Dashboard() {
                 type="text"
                 placeholder="Exercise Title"
                 value={newExercise.title}
-                onChange={(e) =>
-                  setNewExercise({ ...newExercise, title: e.target.value })
-                }
+                onChange={(e) => setNewExercise({ ...newExercise, title: e.target.value })}
                 className="p-2 border rounded"
               />
               <input
                 type="text"
                 placeholder="Description"
                 value={newExercise.description}
-                onChange={(e) =>
-                  setNewExercise({ ...newExercise, description: e.target.value })
-                }
+                onChange={(e) => setNewExercise({ ...newExercise, description: e.target.value })}
                 className="p-2 border rounded"
               />
               <input
                 type="number"
                 placeholder="Port"
                 value={newExercise.port}
-                onChange={(e) =>
-                  setNewExercise({ ...newExercise, port: e.target.value })
-                }
+                onChange={(e) => setNewExercise({ ...newExercise, port: e.target.value })}
                 className="p-2 border rounded"
               />
 
-              {/* Subir ZIP */}
               <input
                 type="file"
                 accept=".zip"
@@ -310,44 +312,49 @@ function Dashboard() {
           </div>
         )}
 
-
         {/* Lista de ejercicios */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {exercises.map((exercise) => (
-            <div
-              key={exercise.id}
-              className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow bg-white dark:bg-gray-800"
-            >
-              <h2 className="text-lg font-semibold">{exercise.title}</h2>
-              <p className="text-sm mb-4">{exercise.description}</p>
-
-              {/* Botones Start / Stop */}
-              <button
-                onClick={() => startExercise(exercise.id)}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                disabled={loading}
+          {exercises.map((exercise) => {
+            const state = getLoadingLabel(exercise.id); 
+            const isLoading = Boolean(state);
+            return (
+              <div
+                key={exercise.id}
+                className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow bg-white dark:bg-gray-800"
               >
-                {loading ? "Starting..." : "Start"}
-              </button>
-              <button
-                onClick={() => stopExercise(exercise.id)}
-                className="ml-2 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-                disabled={loading}
-              >
-                {loading ? "Stopping..." : "Stop"}
-              </button>
+                <h2 className="text-lg font-semibold">{exercise.title}</h2>
+                <p className="text-sm mb-4">{exercise.description}</p>
 
-              {/* Botón Delete solo si isAdmin */}
-              {isAdmin && (
+                {/* Start */}
                 <button
-                  onClick={() => deleteExercise(exercise.id)}
-                  className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                  onClick={() => startExercise(exercise.id)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  disabled={isLoading}
                 >
-                  Delete
+                  {state === "starting" ? "Starting..." : "Start"}
                 </button>
-              )}
-            </div>
-          ))}
+
+                {/* Stop */}
+                <button
+                  onClick={() => stopExercise(exercise.id)}
+                  className="ml-2 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+                  disabled={isLoading}
+                >
+                  {state === "stopping" ? "Stopping..." : "Stop"}
+                </button>
+
+                {/* Delete si admin */}
+                {isAdmin && (
+                  <button
+                    onClick={() => deleteExercise(exercise.id)}
+                    className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
