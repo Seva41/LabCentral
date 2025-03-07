@@ -23,7 +23,7 @@ function ExerciseManager({ exercise, token }) {
         alert(data.error || "Error starting the exercise");
       }
     } catch (error) {
-      alert("Failed to connect to the backend");
+      alert(`Failed to connect to the backend: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ function ExerciseManager({ exercise, token }) {
         alert(data.error || "Error stopping the exercise");
       }
     } catch (error) {
-      alert("Failed to connect to the backend");
+      alert(`Failed to connect to the backend: ${error.message}`);
     } finally {
       setLoading(false);
     }

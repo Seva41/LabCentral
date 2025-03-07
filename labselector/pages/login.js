@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -65,15 +66,15 @@ function Login() {
 
         <div className="text-sm text-center text-gray-600">
           <p>
-            <a href="/reset-password" className="text-blue-500 hover:underline">
+            <Link href="/reset-password" className="text-blue-500 hover:underline">
               ¿Olvidaste tu contraseña?
-            </a>
+            </Link>
           </p>
           <p className="mt-2">
             ¿No tienes una cuenta?{" "}
-            <a href="/signup" className="text-blue-500 hover:underline">
+            <Link href="/signup" className="text-blue-500 hover:underline">
               Regístrate aquí
-            </a>
+            </Link>
           </p>
         </div>
       </form>
