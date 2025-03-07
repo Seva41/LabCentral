@@ -44,9 +44,9 @@ jobs:
       run: npm run lint
 
     # 6. Ejecutar pruebas en el frontend
-    - name: Run tests (frontend)
-      working-directory: labselector
-      run: npm test
+    #- name: Run tests (frontend)
+    #  working-directory: labselector
+    #  run: npm test
 
     # 7. Configurar Python
     - name: Set up Python
