@@ -12,23 +12,35 @@ function Dashboard() {
 
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Texto y spinner global (arriba)
+  // Texto y spinner global (para avisos generales)
   const [statusMessage, setStatusMessage] = useState("");
   const [showSpinner, setShowSpinner] = useState(false);
 
-  // Form para subir un nuevo ejercicio (ZIP)
+  // Datos del nuevo ejercicio (para admin)
   const [newExercise, setNewExercise] = useState({
     title: "",
     description: "",
     port: "",
   });
+  // Archivo ZIP con el ejercicio completo
   const [exerciseZip, setExerciseZip] = useState(null);
 
-  // Verificar si el usuario está logeado y es admin
+  // Helper: retorna el estado ("starting", "stopping" o null) para el exerciseId
+  const getLoadingLabel = (exerciseId) => {
+    return loadingStates[exerciseId] || null;
+  };
+
+  // Helper para actualizar el estado loadingStates de un ejercicio
+  const setExerciseLoading = (exerciseId, state) => {
+    console.log(`Setting exercise ${exerciseId} to ${state}`);
+    setLoadingStates((prev) => ({ ...prev, [exerciseId]: state }));
+  };
+
+  // Verificar si el usuario está logueado y es admin
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/user", {
+        const res = await fetch("http://localhost:5001/api/user", {
           credentials: "include",
         });
         const data = await res.json();
@@ -45,11 +57,11 @@ function Dashboard() {
     fetchUser();
   }, [router]);
 
-  // Cargar la lista de ejercicios
+  // Cargar lista de ejercicios
   useEffect(() => {
     const fetchExercises = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/exercises", {
+        const response = await fetch("http://localhost:5001/api/exercises", {
           credentials: "include",
         });
         const data = await response.json();
@@ -69,18 +81,7 @@ function Dashboard() {
     document.documentElement.classList.toggle("dark", !darkMode);
   };
 
-  // Helper para actualizar el estado loadingStates
-  const setExerciseLoading = (exerciseId, state) => {
-    console.log(`Setting exercise ${exerciseId} to ${state}`);
-    setLoadingStates((prev) => ({ ...prev, [exerciseId]: state }));
-  };
-
-  // Retorna "Starting...", "Stopping...", o null si no está en proceso
-  const getLoadingLabel = (exerciseId) => {
-    return loadingStates[exerciseId] || null;
-  };
-
-  // Subir ZIP y crear nuevo ejercicio
+  // Subir ZIP y crear nuevo ejercicio (solo admin)
   const addExerciseWithZip = async () => {
     if (!exerciseZip) {
       alert("Please select a ZIP file first.");
@@ -93,7 +94,7 @@ function Dashboard() {
     formData.append("zipfile", exerciseZip);
 
     try {
-      const response = await fetch("http://localhost:5000/api/exercise_with_zip", {
+      const response = await fetch("http://localhost:5001/api/exercise_with_zip", {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -101,14 +102,14 @@ function Dashboard() {
 
       if (response.ok) {
         alert("Exercise added successfully");
-        // Recargar la lista
-        const updatedRes = await fetch("http://localhost:5000/api/exercises", {
+        // Recargar la lista de ejercicios
+        const updatedRes = await fetch("http://localhost:5001/api/exercises", {
           credentials: "include",
         });
         const updatedExercises = await updatedRes.json();
         setExercises(updatedExercises);
 
-        // Limpiar
+        // Limpiar el form
         setNewExercise({ title: "", description: "", port: "" });
         setExerciseZip(null);
       } else {
@@ -122,7 +123,7 @@ function Dashboard() {
   // Eliminar ejercicio (solo admin)
   const deleteExercise = async (exerciseId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/exercise/${exerciseId}`, {
+      const response = await fetch(`http://localhost:5001/api/exercise/${exerciseId}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -136,16 +137,14 @@ function Dashboard() {
     }
   };
 
-  // Iniciar
+  // Iniciar ejercicio
   const startExercise = async (exerciseId) => {
-    // MARCA SOLO ESTE EJERCICIO como "starting"
     setExerciseLoading(exerciseId, "starting");
-
     setStatusMessage("Iniciando contenedor...");
     setShowSpinner(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/exercise/${exerciseId}/start`, {
+      const response = await fetch(`http://localhost:5001/api/exercise/${exerciseId}/start`, {
         method: "POST",
         credentials: "include",
       });
@@ -153,40 +152,38 @@ function Dashboard() {
 
       if (response.ok) {
         if (data.proxy_url) {
-          // Retraso de 4 seg
+          // Espera 4 segundos antes de abrir para dar tiempo a que arranque el contenedor
           setTimeout(() => {
-            window.open(`http://localhost:5000${data.proxy_url}`, "_blank");
+            window.open(`http://localhost:5001${data.proxy_url}`, "_blank");
             setStatusMessage("");
             setShowSpinner(false);
           }, 4000);
         } else {
           alert(data.message || `Exercise ${exerciseId} started`);
-          setShowSpinner(false);
           setStatusMessage("");
+          setShowSpinner(false);
         }
       } else {
         alert(data.error || "Failed to start exercise");
-        setShowSpinner(false);
         setStatusMessage("");
+        setShowSpinner(false);
       }
     } catch (error) {
       console.error("Error starting exercise:", error);
       alert("Error connecting to the backend");
-      setShowSpinner(false);
       setStatusMessage("");
+      setShowSpinner(false);
     } finally {
-      // Volver a null
       setExerciseLoading(exerciseId, null);
     }
   };
 
-  // Detener
+  // Detener ejercicio
   const stopExercise = async (exerciseId) => {
-    // MARCA SOLO ESTE EJERCICIO como "stopping"
     setExerciseLoading(exerciseId, "stopping");
 
     try {
-      const response = await fetch(`http://localhost:5000/api/exercise/${exerciseId}/stop`, {
+      const response = await fetch(`http://localhost:5001/api/exercise/${exerciseId}/stop`, {
         method: "POST",
         credentials: "include",
       });
@@ -200,7 +197,6 @@ function Dashboard() {
       console.error("Error stopping exercise:", error);
       alert("Error connecting to the backend");
     } finally {
-      // Volver a null
       setExerciseLoading(exerciseId, null);
     }
   };
@@ -208,7 +204,7 @@ function Dashboard() {
   // Logout
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/logout", {
+      const response = await fetch("http://localhost:5001/api/logout", {
         method: "POST",
         credentials: "include",
       });
@@ -263,7 +259,7 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Admin Panel */}
+        {/* Panel de Admin (subida de ZIP) */}
         {isAdmin && (
           <div className="mb-6 p-4 bg-gray-200 dark:bg-gray-800 border rounded-lg">
             <h2 className="text-lg font-semibold mb-4">Admin Panel</h2>
@@ -289,7 +285,7 @@ function Dashboard() {
                 onChange={(e) => setNewExercise({ ...newExercise, port: e.target.value })}
                 className="p-2 border rounded"
               />
-
+              {/* Subir ZIP */}
               <input
                 type="file"
                 accept=".zip"
@@ -315,7 +311,7 @@ function Dashboard() {
         {/* Lista de ejercicios */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {exercises.map((exercise) => {
-            const state = getLoadingLabel(exercise.id); 
+            const state = getLoadingLabel(exercise.id);
             const isLoading = Boolean(state);
             return (
               <div
@@ -325,7 +321,7 @@ function Dashboard() {
                 <h2 className="text-lg font-semibold">{exercise.title}</h2>
                 <p className="text-sm mb-4">{exercise.description}</p>
 
-                {/* Start */}
+                {/* Botón Start */}
                 <button
                   onClick={() => startExercise(exercise.id)}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -334,7 +330,7 @@ function Dashboard() {
                   {state === "starting" ? "Starting..." : "Start"}
                 </button>
 
-                {/* Stop */}
+                {/* Botón Stop */}
                 <button
                   onClick={() => stopExercise(exercise.id)}
                   className="ml-2 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
@@ -343,7 +339,7 @@ function Dashboard() {
                   {state === "stopping" ? "Stopping..." : "Stop"}
                 </button>
 
-                {/* Delete si admin */}
+                {/* Botón Delete (solo admin) */}
                 {isAdmin && (
                   <button
                     onClick={() => deleteExercise(exercise.id)}

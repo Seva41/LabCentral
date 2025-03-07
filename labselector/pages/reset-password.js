@@ -9,7 +9,7 @@ export default function ResetPassword() {
   const handleReset = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:5000/api/request_password_reset", { email });
+      await axios.post("http://localhost:5001/api/request_password_reset", { email });
       setMessage("Si el correo está registrado, se ha enviado un enlace de recuperación.");
     } catch {
       setMessage("Ocurrió un error. Inténtalo nuevamente.");

@@ -16,7 +16,7 @@ export default function ExerciseDetail() {
       }
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/exercise/${id}`, {
+        const response = await axios.get(`http://localhost:5001/api/exercise/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setExercise(response.data); // Asume que el backend devuelve el detalle del ejercicio
@@ -35,7 +35,7 @@ export default function ExerciseDetail() {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:5000/api/exercise/${id}/start`,
+        `http://localhost:5001/api/exercise/${id}/start`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

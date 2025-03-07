@@ -21,7 +21,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
-    CORS(app)
+    CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
 
     with app.app_context():
         from .models import Exercise

@@ -44,7 +44,7 @@ def build_and_start_exercise(dockerfile_path, image_tag, port):
         container = client.containers.run(
             image_tag,
             detach=True,
-            ports={'5000/tcp': port},  # Mapea 5000 del contenedor a 'port' del host
+            ports={'5001/tcp': port},  # Mapea 5001 del contenedor a 'port' del host
             name=container_name,
         )
         return {
@@ -87,7 +87,7 @@ def start_exercise(docker_image, port):
         container = client.containers.run(
             docker_image,
             detach=True,
-            ports={'5000/tcp': None},
+            ports={'5001/tcp': None},
             name=container_name,
         )
         print("Container status:", container.status)

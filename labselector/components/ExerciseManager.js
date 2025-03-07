@@ -8,7 +8,7 @@ function ExerciseManager({ exercise, token }) {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5000/api/exercise/${exercise.id}/start`,
+        `http://localhost:5001/api/exercise/${exercise.id}/start`,
         {
           method: "POST",
           headers: {
@@ -33,7 +33,7 @@ function ExerciseManager({ exercise, token }) {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5000/api/exercise/${exercise.id}/stop`,
+        `http://localhost:5001/api/exercise/${exercise.id}/stop`,
         {
           method: "POST",
           headers: {

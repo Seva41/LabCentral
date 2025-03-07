@@ -50,13 +50,15 @@ def login():
 
     response = make_response(jsonify({'message': 'Login successful'}))
     response.set_cookie(
-        'session_token',
-        token,
-        httponly=True,         # Evita que JS la lea
-        samesite='None',       # Necesario si el front está en otro dominio/puerto
-        secure=True         # En producción poner True si se usa HTTPS
-    )
+            "session_token",
+            token,
+            httponly=True,
+            secure=False,         # CAMBIAR EN PRODUCCION
+            samesite="Lax",
+            path="/"
+        )
     return response
+
 
 @auth_blueprint.route('/api/logout', methods=['POST'])
 def logout_user():
