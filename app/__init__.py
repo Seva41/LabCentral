@@ -1,13 +1,17 @@
+import os
+import json
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_migrate import Migrate
-import os
-import json
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-db_path = os.path.join(basedir, '..', 'instance', 'app.db')
+instance_dir = os.path.join(basedir, '..', 'instance')
+
+os.makedirs(instance_dir, exist_ok=True)
+
+db_path = os.path.join(instance_dir, 'app.db')
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
