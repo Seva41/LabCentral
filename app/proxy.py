@@ -35,7 +35,7 @@ def proxy_to_exercise(exercise_id, path):
         return jsonify({"error": "No container IP found"}), 500
 
     # 4. Reenviar la petición con requests
-    internal_url = f"http://{container_ip}:5001/{path}"
+    internal_url = f"http://{container_ip}:5000/{path}"
     method = request.method
     headers = {k: v for k, v in request.headers if k.lower() != 'host'}
     data = request.get_data()

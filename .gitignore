@@ -8,4 +8,4 @@ __pycache__/
 myenv/
 
 # Cápsulas (para mantener secreto)
-/dockerfiles/*/
+#/dockerfiles/*/
