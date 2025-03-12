@@ -117,25 +117,22 @@ def list_questions(exercise_id):
 
 @question_blueprint.route('/api/exercise/<int:exercise_id>/question/<int:question_id>/answer', methods=['POST'])
 def submit_answer(exercise_id, question_id):
-    """
-    El usuario envía su respuesta a una pregunta concreta de un ejercicio.
-    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
     user_id = decoded['user_id']
 
-    # Asegurarse de que la pregunta existe y pertenece a ese ejercicio
-    question = ExerciseQuestion.query.filter_by(id=question_id, exercise_id=exercise_id).first()
-    if not question:
-        return jsonify({'error': 'Question not found'}), 404
+    # Verificar si ya existe la respuesta
+    existing = ExerciseAnswer.query.filter_by(user_id=user_id, question_id=question_id).first()
+    if existing:
+        return jsonify({'error': 'Ya respondiste esta pregunta, no se puede editar.'}), 400
 
     data = request.json
-    answer_text = data.get('answer_text')
+    answer_text = data.get('answer_text', '')
 
-    # Guardar la respuesta
+    # Crear la nueva respuesta
     new_answer = ExerciseAnswer(
-        question_id=question.id,
+        question_id=question_id,
         user_id=user_id,
         answer_text=answer_text
     )
@@ -233,3 +230,23 @@ def delete_question(exercise_id, question_id):
     db.session.delete(question)
     db.session.commit()
     return jsonify({'message': 'Question deleted'}), 200
+
+@question_blueprint.route('/api/exercise/<int:exercise_id>/my_answers', methods=['GET'])
+def get_my_answers(exercise_id):
+    decoded = decode_token()
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+    user_id = decoded['user_id']
+
+    # Buscamos todas las respuestas de ese user en ese ejercicio
+    answers = db.session.query(ExerciseAnswer).join(ExerciseQuestion).filter(
+        ExerciseQuestion.exercise_id == exercise_id,
+        ExerciseAnswer.user_id == user_id
+    ).all()
+
+    # Retornar un diccionario question_id => answer_text
+    result = {}
+    for ans in answers:
+        result[ans.question_id] = ans.answer_text
+
+    return jsonify(result)
