@@ -1,20 +1,15 @@
 import '../styles/globals.css';
 import Footer from '../components/Footer';
-import { AuthProvider } from "../context/AuthContext"; // Importa AuthProvider desde la ruta correcta
-
+import { AuthProvider } from "../context/AuthContext";
 
 export default function MyApp({ Component, pageProps }) {
   return (
     <AuthProvider>
-    <div className="layout">
-      {/* Main content */}
-      <main className="content">
+      <div className="h-screen overflow-y-auto pb-16">
         <Component {...pageProps} />
-      </main>
+      </div>
 
-      {/* Footer */}
       <Footer />
-    </div>
     </AuthProvider>
   );
 }
