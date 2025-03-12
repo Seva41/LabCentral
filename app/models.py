@@ -30,3 +30,36 @@ class Exercise(db.Model):
     description = db.Column(db.Text, nullable=False)
     dockerfile_path = db.Column(db.String(200), nullable=False)
     port = db.Column(db.Integer, nullable=False)
+
+class ExerciseQuestion(db.Model):
+    __tablename__ = 'exercise_question'
+    id = db.Column(db.Integer, primary_key=True)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+
+    # Título corto de la pregunta
+    question_text = db.Column(db.String(255), nullable=False)
+
+    # Texto adicional, explicación o enunciado largo (opcional)
+    question_body = db.Column(db.Text, nullable=True)
+
+    # Tipo de pregunta: 'abierta' o 'multiple_choice'
+    question_type = db.Column(db.String(50), default='abierta')
+
+    # choices guardado como JSON: [
+    #   { "id": 0, "text": "Opción A", "correct": false },
+    #   { "id": 1, "text": "Opción B", "correct": true },
+    #   ...
+    # ]
+    choices = db.Column(db.Text, nullable=True)  # Se puede usar un JSON field
+
+    # Indica si está activa o no
+    is_active = db.Column(db.Boolean, default=True)
+
+
+class ExerciseAnswer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('exercise_question.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    answer_text = db.Column(db.Text, nullable=False)
+    score = db.Column(db.Float, nullable=True)
+    feedback = db.Column(db.Text, nullable=True)
