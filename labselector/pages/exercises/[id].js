@@ -11,30 +11,27 @@ export default function ExerciseDetail() {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
 
-  // Respuestas que el usuario está "editando" localmente antes de enviar
-  // { [questionId]: "texto de respuesta" }
+  // Respuestas que el usuario está "editando" localmente antes de enviar: { [questionId]: "texto" }
   const [answers, setAnswers] = useState({});
 
-  // Respuestas que ya fueron enviadas y están guardadas en el servidor
-  // { [questionId]: "texto de respuesta" }
+  // Respuestas ya enviadas al servidor: { [questionId]: "texto" }
   const [myServerAnswers, setMyServerAnswers] = useState({});
 
-  // Verificar si el usuario es admin
+  // Para saber si es admin
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // === Formulario de creación de pregunta (admin) ===
-  // choicesArray gestiona las opciones de multiple_choice en la UI
+  // === Formulario para crear preguntas (admin) ===
+  // Maneja array de opciones para multiple_choice
   const [newQuestion, setNewQuestion] = useState({
     question_text: "",
     question_type: "abierta",
     choicesArray: [
-      // Comenzamos con 2 opciones mínimas
       { id: 0, text: "", correct: false },
       { id: 1, text: "", correct: false },
     ],
   });
 
-  // ID y datos para la edición de una pregunta existente (admin)
+  // Para editar una pregunta existente
   const [editingQuestionId, setEditingQuestionId] = useState(null);
   const [editQuestionData, setEditQuestionData] = useState({
     question_text: "",
@@ -42,11 +39,11 @@ export default function ExerciseDetail() {
     choices: "",
   });
 
-  // Al montar o cambiar el id (ejercicio), cargamos la info inicial
+  // Al montar o cambiar de 'id', cargamos info
   useEffect(() => {
     if (!id) return;
 
-    // 1) Verificar usuario logueado y admin
+    // 1) Verificar usuario logueado
     const checkUser = async () => {
       try {
         const res = await fetch("http://localhost:5001/api/user", {
@@ -89,6 +86,10 @@ export default function ExerciseDetail() {
           { credentials: "include" }
         );
         const data = await res.json();
+
+        // Agrega un log para verificar la estructura
+        console.log("Preguntas recibidas:", data);
+
         if (!data.error) {
           setQuestions(data);
         } else {
@@ -99,7 +100,7 @@ export default function ExerciseDetail() {
       }
     };
 
-    // 4) Cargar respuestas ya enviadas por el usuario (si las hay)
+    // 4) Cargar respuestas enviadas por el alumno
     const fetchMyAnswers = async () => {
       try {
         const res = await fetch(
@@ -110,7 +111,8 @@ export default function ExerciseDetail() {
         );
         const data = await res.json();
         if (!data.error) {
-          setMyServerAnswers(data); // { question_id: "respuesta" }
+          // E.g. { questionId: "respuesta" }
+          setMyServerAnswers(data);
         }
       } catch (error) {
         console.error("Error fetching my answers:", error);
@@ -140,7 +142,6 @@ export default function ExerciseDetail() {
 
       if (response.ok) {
         if (data.proxy_url) {
-          // Esperar 3s, luego abrir en otra pestaña
           setTimeout(() => {
             window.open(`http://localhost:5001${data.proxy_url}`, "_blank");
             setStatusMessage("");
@@ -193,7 +194,6 @@ export default function ExerciseDetail() {
   };
 
   // ===================== Manejo de respuestas de alumno =====================
-  // El user escribe localmente, lo guardamos en answers
   const handleAnswerChange = (questionId, text) => {
     setAnswers((prev) => ({ ...prev, [questionId]: text }));
   };
@@ -219,7 +219,7 @@ export default function ExerciseDetail() {
 
       if (res.ok) {
         alert("Respuesta enviada correctamente");
-        // Guardar en myServerAnswers para mostrar que ya está respondida
+        // Guardar en myServerAnswers para que aparezca bloqueada
         setMyServerAnswers((prev) => ({
           ...prev,
           [questionId]: answerText,
@@ -234,7 +234,6 @@ export default function ExerciseDetail() {
   };
 
   // ===================== Creación de pregunta (admin) =====================
-  // Añadir una nueva opción a choicesArray
   const addNewOption = () => {
     setNewQuestion((prev) => {
       const newId = prev.choicesArray.length;
@@ -248,17 +247,14 @@ export default function ExerciseDetail() {
     });
   };
 
-  // Eliminar opción
   const removeOption = (optionIndex) => {
     setNewQuestion((prev) => {
       const filtered = prev.choicesArray.filter((_, i) => i !== optionIndex);
-      // reindexar
       const reindexed = filtered.map((item, idx) => ({ ...item, id: idx }));
       return { ...prev, choicesArray: reindexed };
     });
   };
 
-  // Cambiar el texto de una opción
   const handleOptionTextChange = (optionIndex, newText) => {
     setNewQuestion((prev) => {
       const updated = [...prev.choicesArray];
@@ -267,7 +263,6 @@ export default function ExerciseDetail() {
     });
   };
 
-  // Marcar una opción como la correcta
   const markOptionAsCorrect = (optionIndex) => {
     setNewQuestion((prev) => {
       const updated = prev.choicesArray.map((opt, i) => ({
@@ -278,7 +273,6 @@ export default function ExerciseDetail() {
     });
   };
 
-  // Crear la pregunta en el backend
   const createQuestion = async () => {
     if (!newQuestion.question_text.trim()) {
       alert("La pregunta está vacía");
@@ -294,6 +288,7 @@ export default function ExerciseDetail() {
       finalChoices = JSON.stringify(newQuestion.choicesArray);
     }
 
+    // El backend blueprint espera: question_text, question_type, choices
     const payload = {
       question_text: newQuestion.question_text,
       question_type: newQuestion.question_type,
@@ -319,8 +314,8 @@ export default function ExerciseDetail() {
           ...prev,
           {
             id: data.question_id,
-            text: payload.question_text,
-            type: payload.question_type,
+            text: payload.question_text,    // El blueprint retorna text => question_text
+            type: payload.question_type,    // "type" => question_type
             choices: payload.choices,
           },
         ]);
@@ -386,6 +381,7 @@ export default function ExerciseDetail() {
       return;
     }
     try {
+      // El blueprint de update_question espera question_text, question_type, y choices
       const res = await fetch(
         `http://localhost:5001/api/exercise/${id}/question/${editingQuestionId}`,
         {
@@ -434,7 +430,7 @@ export default function ExerciseDetail() {
       <div>
         <Link href="/dashboard">
           <button className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
-            &larr; Volver al Dashboard
+          &larr; Volver al Dashboard
           </button>
         </Link>
       </div>
@@ -482,8 +478,7 @@ export default function ExerciseDetail() {
 
         {/* Listado de preguntas */}
         {questions.map((q) => {
-          // Revisamos si el usuario ya respondió esta pregunta
-          const serverAnswer = myServerAnswers[q.id]; // string | undefined
+          const serverAnswer = myServerAnswers[q.id];
           const alreadyAnswered = Boolean(serverAnswer);
 
           return (
@@ -491,8 +486,8 @@ export default function ExerciseDetail() {
               key={q.id}
               className="border-b border-gray-200 py-4 flex flex-col md:flex-row md:items-center md:justify-between"
             >
-              {/* Si estamos editando esta pregunta (admin) */}
               {editingQuestionId === q.id ? (
+                // Modo edición
                 <div className="w-full">
                   <input
                     className="border w-full p-2 mb-2"
@@ -549,12 +544,10 @@ export default function ExerciseDetail() {
                   </div>
                 </div>
               ) : (
-                // ==================== Vista normal (no edit) ====================
                 <>
                   <div className="flex-1 mb-2 md:mb-0">
                     <p className="font-medium">{q.text}</p>
 
-                    {/* multiple_choice => parseamos las opciones */}
                     {q.type === "multiple_choice" && (
                       <div className="my-2">
                         {(() => {
@@ -588,6 +581,8 @@ export default function ExerciseDetail() {
                           }
 
                           const showCorrectLabel = isAdmin;
+                          const disabled = alreadyAnswered;
+                          const localAnswer = answers[q.id] || "";
 
                           return (
                             <div>
@@ -597,14 +592,10 @@ export default function ExerciseDetail() {
                                   label += " (Correcta)";
                                 }
 
-                                // Chequear si ya respondió => radios deshabilitados
-                                const disabled = alreadyAnswered;
-                                // Marcamos el radio si coincide con la local (answers) o la guardada en el server
-                                const localAnswer = answers[q.id] || "";
-                                const isChecked =
-                                  alreadyAnswered
-                                    ? serverAnswer === opt.text
-                                    : localAnswer === opt.text;
+                                // Marcamos el radio según localAnswer o la del servidor
+                                const isChecked = alreadyAnswered
+                                  ? serverAnswer === opt.text
+                                  : localAnswer === opt.text;
 
                                 return (
                                   <label
@@ -631,11 +622,10 @@ export default function ExerciseDetail() {
                       </div>
                     )}
 
-                    {/* Sección de respuesta */}
+                    {/* Respuesta para preguntas abiertas o multiple_choice */}
                     <div className="mt-2">
                       {q.type === "abierta" && (
                         <>
-                          {/* Si ya tiene respuesta en el server, mostrar textarea deshabilitado */}
                           {alreadyAnswered ? (
                             <>
                               <p className="text-sm text-green-700">
@@ -670,11 +660,9 @@ export default function ExerciseDetail() {
                         </>
                       )}
 
-                      {/* multiple_choice => botón de enviar */}
                       {q.type === "multiple_choice" && (
                         <>
                           {alreadyAnswered ? (
-                            // Ya respondió, mostrar su respuesta
                             <p className="text-sm text-green-700">
                               Respuesta enviada: {serverAnswer}
                             </p>
@@ -714,10 +702,11 @@ export default function ExerciseDetail() {
           );
         })}
 
-        {/* Panel para crear nueva pregunta (solo admin) */}
+        {/* Panel de creación de preguntas (solo admin) */}
         {isAdmin && (
           <div className="mt-4 p-4 bg-gray-50 border rounded">
             <h3 className="font-bold mb-2">Crear nueva pregunta</h3>
+
             {/* Texto de la pregunta */}
             <label className="block mb-2">
               <span className="text-sm">Texto de la pregunta:</span>
@@ -752,13 +741,11 @@ export default function ExerciseDetail() {
               </select>
             </label>
 
-            {/* Opciones si es multiple_choice */}
             {newQuestion.question_type === "multiple_choice" && (
               <div className="mt-2 p-2 bg-white border rounded">
                 <h4 className="font-semibold mb-2">Opciones</h4>
                 {newQuestion.choicesArray.map((opt, idx) => (
                   <div key={opt.id} className="flex items-center mb-2">
-                    {/* Radio para marcar como correcta */}
                     <input
                       type="radio"
                       name="correctOption"
@@ -766,7 +753,6 @@ export default function ExerciseDetail() {
                       onChange={() => markOptionAsCorrect(idx)}
                       className="mr-2"
                     />
-                    {/* Texto de la opción */}
                     <input
                       type="text"
                       className="border p-1 rounded flex-1 mr-2"
@@ -774,7 +760,6 @@ export default function ExerciseDetail() {
                       value={opt.text}
                       onChange={(e) => handleOptionTextChange(idx, e.target.value)}
                     />
-                    {/* Eliminar opción (si tienes más de 2, por ejemplo) */}
                     {newQuestion.choicesArray.length > 2 && (
                       <button
                         type="button"
@@ -786,8 +771,6 @@ export default function ExerciseDetail() {
                     )}
                   </div>
                 ))}
-
-                {/* Botón para añadir nueva opción */}
                 <button
                   type="button"
                   onClick={addNewOption}
@@ -798,7 +781,6 @@ export default function ExerciseDetail() {
               </div>
             )}
 
-            {/* Botón para crear la pregunta */}
             <button
               onClick={createQuestion}
               className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
