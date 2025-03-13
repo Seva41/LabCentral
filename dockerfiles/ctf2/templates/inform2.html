@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Challenge 2</title>
-    <link rel="icon" href="/static/favicon.ico">
+    <link rel="icon" href="./static/favicon.ico">
 
     <style>
         * {
@@ -171,7 +171,7 @@
     <div class="container">
         <h2>Login</h2>
         <p>Ingresa como administrador</p>
-        <form method="post">
+        <form method="post" class="form-style">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" name="username" placeholder="Usuario">
             <input type="password" name="password" placeholder="Contraseña">
@@ -183,7 +183,9 @@
         {% if error_message %}
         <div class="result-message error">{{ error_message }}</div>
         {% endif %}
-        <a href="/" class="cta">Volver al Inicio</a>
+        <form action="./" method="get">
+            <button type="submit" class="back-button">Volver al Inicio</button>
+        </form>
     </div>
    
     <div class="watermark">
@@ -192,7 +194,15 @@
         Seguridad en TI 2024/2
     </div>
 
-    <script src="/static/js/particles.min.js" nonce="{{ g.nonce }}" defer></script>
-    <script src="/static/js/app.js" nonce="{{ g.nonce }}" defer></script>
+    <script src="./static/js/particles.min.js" defer></script>
+    <script nonce="{{ g.nonce }}">
+        document.addEventListener("DOMContentLoaded", () => {
+            if (typeof particlesJS !== 'undefined') {
+                particlesJS.load('particles-js', './static/particles.json');
+            } else {
+                console.error("particlesJS no está definido.");
+            }
+        });
+    </script>
 </body>
 </html>
