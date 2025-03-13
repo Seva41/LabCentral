@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { FaSun, FaMoon } from "react-icons/fa";
 
 export default function ExerciseDetail() {
   const router = useRouter();
@@ -11,17 +12,15 @@ export default function ExerciseDetail() {
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
 
-  // Respuestas que el usuario está "editando" localmente antes de enviar: { [questionId]: "texto" }
+  // Respuestas que el usuario edita localmente antes de enviar
   const [answers, setAnswers] = useState({});
-
-  // Respuestas ya enviadas al servidor: { [questionId]: "texto" }
+  // Respuestas ya enviadas al servidor
   const [myServerAnswers, setMyServerAnswers] = useState({});
 
   // Para saber si es admin
   const [isAdmin, setIsAdmin] = useState(false);
 
   // === Formulario para crear preguntas (admin) ===
-  // Maneja array de opciones para multiple_choice
   const [newQuestion, setNewQuestion] = useState({
     question_text: "",
     question_type: "abierta",
@@ -39,11 +38,25 @@ export default function ExerciseDetail() {
     choices: "",
   });
 
-  // Al montar o cambiar de 'id', cargamos info
+  // Estado para el modo oscuro
+  const [darkMode, setDarkMode] = useState(false);
+
+  // Al montar, leer la preferencia de modo oscuro desde localStorage
+  useEffect(() => {
+    const storedDarkMode = localStorage.getItem("darkMode");
+    if (storedDarkMode === "true") {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  // Verificar usuario logueado y cargar datos del ejercicio y preguntas
   useEffect(() => {
     if (!id) return;
 
-    // 1) Verificar usuario logueado
     const checkUser = async () => {
       try {
         const res = await fetch("http://localhost:5001/api/user", {
@@ -61,7 +74,6 @@ export default function ExerciseDetail() {
       }
     };
 
-    // 2) Cargar detalle del ejercicio
     const fetchExerciseDetail = async () => {
       try {
         const res = await fetch(`http://localhost:5001/api/exercise/${id}`, {
@@ -78,7 +90,6 @@ export default function ExerciseDetail() {
       }
     };
 
-    // 3) Cargar lista de preguntas
     const fetchQuestions = async () => {
       try {
         const res = await fetch(
@@ -86,10 +97,7 @@ export default function ExerciseDetail() {
           { credentials: "include" }
         );
         const data = await res.json();
-
-        // Agrega un log para verificar la estructura
         console.log("Preguntas recibidas:", data);
-
         if (!data.error) {
           setQuestions(data);
         } else {
@@ -100,18 +108,14 @@ export default function ExerciseDetail() {
       }
     };
 
-    // 4) Cargar respuestas enviadas por el alumno
     const fetchMyAnswers = async () => {
       try {
         const res = await fetch(
           `http://localhost:5001/api/exercise/${id}/my_answers`,
-          {
-            credentials: "include",
-          }
+          { credentials: "include" }
         );
         const data = await res.json();
         if (!data.error) {
-          // E.g. { questionId: "respuesta" }
           setMyServerAnswers(data);
         }
       } catch (error) {
@@ -124,6 +128,18 @@ export default function ExerciseDetail() {
     fetchQuestions();
     fetchMyAnswers();
   }, [id, router]);
+
+  // Función para alternar modo oscuro y guardar la preferencia
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("darkMode", newMode.toString());
+  };
 
   // ===================== Start/Stop contenedor =====================
   const startExercise = async () => {
@@ -219,7 +235,6 @@ export default function ExerciseDetail() {
 
       if (res.ok) {
         alert("Respuesta enviada correctamente");
-        // Guardar en myServerAnswers para que aparezca bloqueada
         setMyServerAnswers((prev) => ({
           ...prev,
           [questionId]: answerText,
@@ -288,7 +303,6 @@ export default function ExerciseDetail() {
       finalChoices = JSON.stringify(newQuestion.choicesArray);
     }
 
-    // El backend blueprint espera: question_text, question_type, choices
     const payload = {
       question_text: newQuestion.question_text,
       question_type: newQuestion.question_type,
@@ -309,17 +323,15 @@ export default function ExerciseDetail() {
       const data = await res.json();
       if (res.ok) {
         alert("Pregunta creada");
-        // Añadir a la lista local
         setQuestions((prev) => [
           ...prev,
           {
             id: data.question_id,
-            text: payload.question_text,    // El blueprint retorna text => question_text
-            type: payload.question_type,    // "type" => question_type
+            text: payload.question_text,
+            type: payload.question_type,
             choices: payload.choices,
           },
         ]);
-        // Resetear formulario
         setNewQuestion({
           question_text: "",
           question_type: "abierta",
@@ -337,7 +349,6 @@ export default function ExerciseDetail() {
     }
   };
 
-  // ===================== Edición y eliminación de preguntas (admin) =====================
   const deleteQuestion = async (questionId) => {
     if (!confirm("¿Estás seguro de eliminar esta pregunta?")) return;
 
@@ -381,7 +392,6 @@ export default function ExerciseDetail() {
       return;
     }
     try {
-      // El blueprint de update_question espera question_text, question_type, y choices
       const res = await fetch(
         `http://localhost:5001/api/exercise/${id}/question/${editingQuestionId}`,
         {
@@ -425,370 +435,357 @@ export default function ExerciseDetail() {
   }
 
   return (
-    <div className="p-4 max-w-5xl mx-auto space-y-6">
-      {/* Botón para volver al dashboard */}
-      <div>
-        <Link href="/dashboard">
-          <button className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
-          &larr; Volver al Dashboard
-          </button>
-        </Link>
-      </div>
-
-      {/* Encabezado del ejercicio */}
-      <div className="bg-white p-4 rounded shadow">
-        <h1 className="text-2xl font-bold mb-2">{exercise.title}</h1>
-        <p className="mb-4">{exercise.description}</p>
-
-        {/* Mensaje global de estado */}
-        {statusMessage && (
-          <div className="mb-4 flex items-center space-x-2">
-            {loading && (
-              <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-            )}
-            <span>{statusMessage}</span>
+    // Envolvemos toda la página en un contenedor que cambia de colores según darkMode
+    <div className={`${darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"} min-h-screen`}>
+      <div className="p-4 max-w-5xl mx-auto space-y-6">
+        {/* Encabezado: Volver al Dashboard y switch de modo oscuro */}
+        <div className="flex justify-between items-center">
+          <Link href="/dashboard">
+            <button className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+              &larr; Volver al Dashboard
+            </button>
+          </Link>
+          <div className="flex items-center">
+            <FaSun className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-50" : "opacity-100"}`} />
+            <label className="relative inline-block w-10 h-6 mx-2">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={darkMode}
+                onChange={toggleDarkMode}
+              />
+              <div className="w-10 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-500 transition"></div>
+              <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full peer-checked:translate-x-4 transition"></div>
+            </label>
+            <FaMoon className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-100" : "opacity-50"}`} />
           </div>
-        )}
-
-        {/* Botones Start/Stop del contenedor */}
-        <div className="space-x-2">
-          <button
-            onClick={startExercise}
-            disabled={loading}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          >
-            Start
-          </button>
-          <button
-            onClick={stopExercise}
-            disabled={loading}
-            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-          >
-            Stop
-          </button>
         </div>
-      </div>
 
-      {/* Sección de preguntas */}
-      <div className="bg-white p-4 rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">Preguntas</h2>
-        {questions.length === 0 && (
-          <p className="text-gray-600">No hay preguntas configuradas.</p>
-        )}
-
-        {/* Listado de preguntas */}
-        {questions.map((q) => {
-          const serverAnswer = myServerAnswers[q.id];
-          const alreadyAnswered = Boolean(serverAnswer);
-
-          return (
-            <div
-              key={q.id}
-              className="border-b border-gray-200 py-4 flex flex-col md:flex-row md:items-center md:justify-between"
+        {/* Detalle del ejercicio */}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+          <h1 className="text-2xl font-bold mb-2">{exercise.title}</h1>
+          <p className="mb-4">{exercise.description}</p>
+          {statusMessage && (
+            <div className="mb-4 flex items-center space-x-2">
+              {loading && (
+                <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              )}
+              <span>{statusMessage}</span>
+            </div>
+          )}
+          <div className="space-x-2">
+            <button
+              onClick={startExercise}
+              disabled={loading}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
-              {editingQuestionId === q.id ? (
-                // Modo edición
-                <div className="w-full">
-                  <input
-                    className="border w-full p-2 mb-2"
-                    value={editQuestionData.question_text}
-                    onChange={(e) =>
-                      setEditQuestionData((prev) => ({
-                        ...prev,
-                        question_text: e.target.value,
-                      }))
-                    }
-                  />
-                  <select
-                    className="border p-2 mb-2 block"
-                    value={editQuestionData.question_type}
-                    onChange={(e) =>
-                      setEditQuestionData((prev) => ({
-                        ...prev,
-                        question_type: e.target.value,
-                      }))
-                    }
-                  >
-                    <option value="abierta">Abierta</option>
-                    <option value="multiple_choice">Opción Múltiple</option>
-                  </select>
+              Start
+            </button>
+            <button
+              onClick={stopExercise}
+              disabled={loading}
+              className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+            >
+              Stop
+            </button>
+          </div>
+        </div>
 
-                  {editQuestionData.question_type === "multiple_choice" && (
-                    <textarea
-                      className="border p-2 mb-2 w-full"
-                      rows={3}
-                      placeholder='Opciones separadas por línea o JSON (ej: ["op1", "op2"])'
-                      value={editQuestionData.choices}
+        {/* Sección de preguntas */}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
+          <h2 className="text-xl font-semibold mb-4">Preguntas</h2>
+          {questions.length === 0 && (
+            <p className="text-gray-600">No hay preguntas configuradas.</p>
+          )}
+          {questions.map((q) => {
+            const serverAnswer = myServerAnswers[q.id];
+            const alreadyAnswered = Boolean(serverAnswer);
+
+            return (
+              <div
+                key={q.id}
+                className="border-b border-gray-200 dark:border-gray-700 py-4 flex flex-col md:flex-row md:items-center md:justify-between"
+              >
+                {editingQuestionId === q.id ? (
+                  <div className="w-full">
+                    <input
+                      className="border w-full p-2 mb-2"
+                      value={editQuestionData.question_text}
                       onChange={(e) =>
                         setEditQuestionData((prev) => ({
                           ...prev,
-                          choices: e.target.value,
+                          question_text: e.target.value,
                         }))
                       }
                     />
-                  )}
-
-                  <div className="space-x-2">
-                    <button
-                      onClick={saveEditedQuestion}
-                      className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    <select
+                      className="border p-2 mb-2 block"
+                      value={editQuestionData.question_type}
+                      onChange={(e) =>
+                        setEditQuestionData((prev) => ({
+                          ...prev,
+                          question_type: e.target.value,
+                        }))
+                      }
                     >
-                      Guardar
-                    </button>
-                    <button
-                      onClick={cancelEditing}
-                      className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex-1 mb-2 md:mb-0">
-                    <p className="font-medium">{q.text}</p>
-
-                    {q.type === "multiple_choice" && (
-                      <div className="my-2">
-                        {(() => {
-                          if (!q.choices || !q.choices.trim()) {
-                            return (
-                              <p className="text-sm text-gray-500">
-                                No hay opciones configuradas.
-                              </p>
-                            );
-                          }
-
-                          let parsed = [];
-                          try {
-                            const data = JSON.parse(q.choices);
-                            parsed = Array.isArray(data) ? data : [];
-                          } catch (e) {
-                            console.error("Error parseando choices:", e);
-                            return (
-                              <p className="text-sm text-red-500">
-                                Error al leer las opciones.
-                              </p>
-                            );
-                          }
-
-                          if (parsed.length === 0) {
-                            return (
-                              <p className="text-sm text-gray-500">
-                                No hay opciones configuradas.
-                              </p>
-                            );
-                          }
-
-                          const showCorrectLabel = isAdmin;
-                          const disabled = alreadyAnswered;
-                          const localAnswer = answers[q.id] || "";
-
-                          return (
-                            <div>
-                              {parsed.map((opt) => {
-                                let label = opt.text;
-                                if (showCorrectLabel && opt.correct) {
-                                  label += " (Correcta)";
-                                }
-
-                                // Marcamos el radio según localAnswer o la del servidor
-                                const isChecked = alreadyAnswered
-                                  ? serverAnswer === opt.text
-                                  : localAnswer === opt.text;
-
-                                return (
-                                  <label
-                                    key={opt.id}
-                                    className="flex items-center mb-1"
-                                  >
-                                    <input
-                                      type="radio"
-                                      name={`question-${q.id}`}
-                                      checked={isChecked}
-                                      disabled={disabled}
-                                      onChange={() =>
-                                        handleAnswerChange(q.id, opt.text)
-                                      }
-                                      className="mr-2"
-                                    />
-                                    {label}
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          );
-                        })()}
-                      </div>
+                      <option value="abierta">Abierta</option>
+                      <option value="multiple_choice">Opción Múltiple</option>
+                    </select>
+                    {editQuestionData.question_type === "multiple_choice" && (
+                      <textarea
+                        className="border p-2 mb-2 w-full"
+                        rows={3}
+                        placeholder='Opciones separadas por línea o JSON (ej: ["op1", "op2"])'
+                        value={editQuestionData.choices}
+                        onChange={(e) =>
+                          setEditQuestionData((prev) => ({
+                            ...prev,
+                            choices: e.target.value,
+                          }))
+                        }
+                      />
                     )}
-
-                    {/* Respuesta para preguntas abiertas o multiple_choice */}
-                    <div className="mt-2">
-                      {q.type === "abierta" && (
-                        <>
-                          {alreadyAnswered ? (
-                            <>
+                    <div className="space-x-2">
+                      <button
+                        onClick={saveEditedQuestion}
+                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                      >
+                        Guardar
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-1 mb-2 md:mb-0">
+                      <p className="font-medium">{q.text}</p>
+                      {q.type === "multiple_choice" && (
+                        <div className="my-2">
+                          {(() => {
+                            if (!q.choices || !q.choices.trim()) {
+                              return (
+                                <p className="text-sm text-gray-500">
+                                  No hay opciones configuradas.
+                                </p>
+                              );
+                            }
+                            let parsed = [];
+                            try {
+                              const data = JSON.parse(q.choices);
+                              parsed = Array.isArray(data) ? data : [];
+                            } catch (e) {
+                              console.error("Error parseando choices:", e);
+                              return (
+                                <p className="text-sm text-red-500">
+                                  Error al leer las opciones.
+                                </p>
+                              );
+                            }
+                            if (parsed.length === 0) {
+                              return (
+                                <p className="text-sm text-gray-500">
+                                  No hay opciones configuradas.
+                                </p>
+                              );
+                            }
+                            const showCorrectLabel = isAdmin;
+                            const disabled = alreadyAnswered;
+                            const localAnswer = answers[q.id] || "";
+                            return (
+                              <div>
+                                {parsed.map((opt) => {
+                                  let label = opt.text;
+                                  if (showCorrectLabel && opt.correct) {
+                                    label += " (Correcta)";
+                                  }
+                                  const isChecked = alreadyAnswered
+                                    ? serverAnswer === opt.text
+                                    : localAnswer === opt.text;
+                                  return (
+                                    <label
+                                      key={opt.id}
+                                      className="flex items-center mb-1"
+                                    >
+                                      <input
+                                        type="radio"
+                                        name={`question-${q.id}`}
+                                        checked={isChecked}
+                                        disabled={disabled}
+                                        onChange={() =>
+                                          handleAnswerChange(q.id, opt.text)
+                                        }
+                                        className="mr-2"
+                                      />
+                                      {label}
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                      <div className="mt-2">
+                        {q.type === "abierta" && (
+                          <>
+                            {alreadyAnswered ? (
+                              <>
+                                <p className="text-sm text-green-700">
+                                  Tu respuesta (modo lectura):
+                                </p>
+                                <textarea
+                                  className="border w-full p-2 rounded mb-2"
+                                  rows={2}
+                                  disabled
+                                  value={serverAnswer}
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <textarea
+                                  className="border w-full p-2 rounded mb-2"
+                                  rows={2}
+                                  placeholder="Tu respuesta..."
+                                  value={answers[q.id] || ""}
+                                  onChange={(e) =>
+                                    handleAnswerChange(q.id, e.target.value)
+                                  }
+                                />
+                                <button
+                                  onClick={() => submitAnswer(q.id)}
+                                  className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
+                                >
+                                  Enviar respuesta
+                                </button>
+                              </>
+                            )}
+                          </>
+                        )}
+                        {q.type === "multiple_choice" && (
+                          <>
+                            {alreadyAnswered ? (
                               <p className="text-sm text-green-700">
-                                Tu respuesta (modo lectura):
+                                Respuesta enviada: {serverAnswer}
                               </p>
-                              <textarea
-                                className="border w-full p-2 rounded mb-2"
-                                rows={2}
-                                disabled
-                                value={serverAnswer}
-                              />
-                            </>
-                          ) : (
-                            <>
-                              <textarea
-                                className="border w-full p-2 rounded mb-2"
-                                rows={2}
-                                placeholder="Tu respuesta..."
-                                value={answers[q.id] || ""}
-                                onChange={(e) =>
-                                  handleAnswerChange(q.id, e.target.value)
-                                }
-                              />
+                            ) : (
                               <button
                                 onClick={() => submitAnswer(q.id)}
                                 className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
                               >
                                 Enviar respuesta
                               </button>
-                            </>
-                          )}
-                        </>
-                      )}
-
-                      {q.type === "multiple_choice" && (
-                        <>
-                          {alreadyAnswered ? (
-                            <p className="text-sm text-green-700">
-                              Respuesta enviada: {serverAnswer}
-                            </p>
-                          ) : (
-                            <button
-                              onClick={() => submitAnswer(q.id)}
-                              className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
-                            >
-                              Enviar respuesta
-                            </button>
-                          )}
-                        </>
-                      )}
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Botones de edición/eliminación (solo admin) */}
-                  {isAdmin && (
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => startEditingQuestion(q)}
-                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => deleteQuestion(q.id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Panel de creación de preguntas (solo admin) */}
-        {isAdmin && (
-          <div className="mt-4 p-4 bg-gray-50 border rounded">
-            <h3 className="font-bold mb-2">Crear nueva pregunta</h3>
-
-            {/* Texto de la pregunta */}
-            <label className="block mb-2">
-              <span className="text-sm">Texto de la pregunta:</span>
-              <input
-                type="text"
-                className="border p-2 w-full rounded"
-                value={newQuestion.question_text}
-                onChange={(e) =>
-                  setNewQuestion((prev) => ({
-                    ...prev,
-                    question_text: e.target.value,
-                  }))
-                }
-              />
-            </label>
-
-            {/* Tipo de pregunta */}
-            <label className="block mb-2">
-              <span className="text-sm">Tipo de pregunta:</span>
-              <select
-                className="border p-2 w-full rounded"
-                value={newQuestion.question_type}
-                onChange={(e) =>
-                  setNewQuestion((prev) => ({
-                    ...prev,
-                    question_type: e.target.value,
-                  }))
-                }
-              >
-                <option value="abierta">Abierta</option>
-                <option value="multiple_choice">Opción Múltiple</option>
-              </select>
-            </label>
-
-            {newQuestion.question_type === "multiple_choice" && (
-              <div className="mt-2 p-2 bg-white border rounded">
-                <h4 className="font-semibold mb-2">Opciones</h4>
-                {newQuestion.choicesArray.map((opt, idx) => (
-                  <div key={opt.id} className="flex items-center mb-2">
-                    <input
-                      type="radio"
-                      name="correctOption"
-                      checked={opt.correct}
-                      onChange={() => markOptionAsCorrect(idx)}
-                      className="mr-2"
-                    />
-                    <input
-                      type="text"
-                      className="border p-1 rounded flex-1 mr-2"
-                      placeholder={`Opción #${idx + 1}`}
-                      value={opt.text}
-                      onChange={(e) => handleOptionTextChange(idx, e.target.value)}
-                    />
-                    {newQuestion.choicesArray.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => removeOption(idx)}
-                        className="bg-red-500 text-white px-2 py-1 rounded"
-                      >
-                        X
-                      </button>
+                    {isAdmin && (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => startEditingQuestion(q)}
+                          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => deleteQuestion(q.id)}
+                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     )}
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={addNewOption}
-                  className="bg-blue-500 text-white px-3 py-1 rounded"
-                >
-                  Añadir opción
-                </button>
+                  </>
+                )}
               </div>
-            )}
-
-            <button
-              onClick={createQuestion}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Crear Pregunta
-            </button>
-          </div>
-        )}
+            );
+          })}
+          {isAdmin && (
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 border rounded">
+              <h3 className="font-bold mb-2">Crear nueva pregunta</h3>
+              <label className="block mb-2">
+                <span className="text-sm">Texto de la pregunta:</span>
+                <input
+                  type="text"
+                  className="border p-2 w-full rounded"
+                  value={newQuestion.question_text}
+                  onChange={(e) =>
+                    setNewQuestion((prev) => ({
+                      ...prev,
+                      question_text: e.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="block mb-2">
+                <span className="text-sm">Tipo de pregunta:</span>
+                <select
+                  className="border p-2 w-full rounded"
+                  value={newQuestion.question_type}
+                  onChange={(e) =>
+                    setNewQuestion((prev) => ({
+                      ...prev,
+                      question_type: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="abierta">Abierta</option>
+                  <option value="multiple_choice">Opción Múltiple</option>
+                </select>
+              </label>
+              {newQuestion.question_type === "multiple_choice" && (
+                <div className="mt-2 p-2 bg-white dark:bg-gray-800 border rounded">
+                  <h4 className="font-semibold mb-2">Opciones</h4>
+                  {newQuestion.choicesArray.map((opt, idx) => (
+                    <div key={opt.id} className="flex items-center mb-2">
+                      <input
+                        type="radio"
+                        name="correctOption"
+                        checked={opt.correct}
+                        onChange={() => markOptionAsCorrect(idx)}
+                        className="mr-2"
+                      />
+                      <input
+                        type="text"
+                        className="border p-1 rounded flex-1 mr-2"
+                        placeholder={`Opción #${idx + 1}`}
+                        value={opt.text}
+                        onChange={(e) => handleOptionTextChange(idx, e.target.value)}
+                      />
+                      {newQuestion.choicesArray.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => removeOption(idx)}
+                          className="bg-red-500 text-white px-2 py-1 rounded"
+                        >
+                          X
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addNewOption}
+                    className="bg-blue-500 text-white px-3 py-1 rounded"
+                  >
+                    Añadir opción
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={createQuestion}
+                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Crear Pregunta
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
