@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SecureTech - Tu Compañero en Seguridad</title>
-    <link rel="icon" href="/static/favicon.ico">
+    <link rel="icon" href="./static/favicon.ico">
     <style>
         body {
             margin: 0;
@@ -181,28 +181,28 @@
         <div class="card {% if challenge_status['crofie1'] %}completed{% else %}not-completed{% endif %}">
             <h3>Foro</h3>
             <p>Envía mensajes a nuestro muro</p>
-            <a href="/crofie1">Accede</a>
+            <a href="./crofie1">Accede</a>
         </div>
         <div class="card {% if challenge_status['inform2'] %}completed{% else %}not-completed{% endif %}">
             <h3>Login</h3>
             <p>Zona de administración</p>
-            <a href="/inform2">Inicia</a>
+            <a href="./inform2">Inicia</a>
         </div>
         <div class="card {% if challenge_status['hcact3'] %}completed{% else %}not-completed{% endif %}">
             <h3>Zona irreversible</h3>
             <p>Descubre la codificación sin vuelta atrás</p>
-            <a href="/hcact3">Aventúrate</a>
+            <a href="./hcact3">Aventúrate</a>
         </div>
         <div class="card {% if challenge_status['cifch4'] %}completed{% else %}not-completed{% endif %}">
             <h3>Lenguaje secreto</h3>
             <p>Aprende nuestra forma segura de comunicarse</p>
-            <a href="/cifch4">Descúbrelo</a>
+            <a href="./cifch4">Descúbrelo</a>
         </div>
         {% if all_completed %}
         <div class="card {% if final_status['finalboss5'] %}completed{% else %}not-completed{% endif %}">
             <h3>Desafío Final</h3>
             <p>¿Estás listo para el reto final?</p>
-            <a href="/finalboss5">Vamos!</a>
+            <a href="./finalboss5">Vamos!</a>
         </div>
         {% endif %}
     </div>
@@ -213,11 +213,11 @@
         Seguridad en TI 2024/2
     </div>
 
-    <script src="/api/exercise/1/proxy/static/js/particles.min.js" defer></script>
+    <script src="./static/js/particles.min.js" defer></script>
     <script nonce="{{ g.nonce }}">
         document.addEventListener("DOMContentLoaded", () => {
             if (typeof particlesJS !== 'undefined') {
-                particlesJS.load('particles-js', '/api/exercise/1/proxy/static/particles.json');
+                particlesJS.load('particles-js', './static/particles.json');
             } else {
                 console.error("particlesJS no está definido.");
             }
