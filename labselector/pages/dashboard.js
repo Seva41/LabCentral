@@ -17,6 +17,18 @@ function Dashboard() {
   // Archivo ZIP
   const [exerciseZip, setExerciseZip] = useState(null);
 
+  // Al montar, cargar preferencia de dark mode desde localStorage
+  useEffect(() => {
+    const storedDarkMode = localStorage.getItem("darkMode");
+    if (storedDarkMode === "true") {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
   // Verificar login y admin
   useEffect(() => {
     const fetchUser = async () => {
@@ -56,10 +68,16 @@ function Dashboard() {
     fetchExercises();
   }, []);
 
-  // Modo oscuro
+  // Función para alternar modo oscuro y guardar la preferencia
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark", !darkMode);
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("darkMode", newMode.toString());
   };
 
   // Subir ZIP y crear nuevo ejercicio (solo admin)
@@ -71,8 +89,7 @@ function Dashboard() {
     const formData = new FormData();
     formData.append("title", newExercise.title);
     formData.append("description", newExercise.description);
-    // Ya no se envía el "port" al backend:
-    // formData.append("port", newExercise.port);
+    // Ya no se envía el "port"
     formData.append("zipfile", exerciseZip);
 
     try {
@@ -209,7 +226,7 @@ function Dashboard() {
                 }
                 className="p-2 border rounded"
               />
-              {/* Se elimina el campo de Port */}
+              {/* Subir ZIP */}
               <input
                 type="file"
                 accept=".zip"
