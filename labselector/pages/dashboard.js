@@ -13,7 +13,6 @@ function Dashboard() {
   const [newExercise, setNewExercise] = useState({
     title: "",
     description: "",
-    port: "",
   });
   // Archivo ZIP
   const [exerciseZip, setExerciseZip] = useState(null);
@@ -72,7 +71,8 @@ function Dashboard() {
     const formData = new FormData();
     formData.append("title", newExercise.title);
     formData.append("description", newExercise.description);
-    formData.append("port", newExercise.port);
+    // Ya no se envía el "port" al backend:
+    // formData.append("port", newExercise.port);
     formData.append("zipfile", exerciseZip);
 
     try {
@@ -92,7 +92,7 @@ function Dashboard() {
         setExercises(updatedExercises);
 
         // Reset form
-        setNewExercise({ title: "", description: "", port: "" });
+        setNewExercise({ title: "", description: "" });
         setExerciseZip(null);
       } else {
         alert("Failed to add exercise");
@@ -209,16 +209,7 @@ function Dashboard() {
                 }
                 className="p-2 border rounded"
               />
-              <input
-                type="number"
-                placeholder="Port"
-                value={newExercise.port}
-                onChange={(e) =>
-                  setNewExercise({ ...newExercise, port: e.target.value })
-                }
-                className="p-2 border rounded"
-              />
-              {/* Subir ZIP */}
+              {/* Se elimina el campo de Port */}
               <input
                 type="file"
                 accept=".zip"
