@@ -21,7 +21,7 @@ def create_question(exercise_id):
     question_text = data.get('question_text')  # Título principal de la pregunta
     question_body = data.get('question_body')  # Texto adicional, opcional
     question_type = data.get('question_type', 'abierta')
-    score = data.get('score', 0)  # <-- Leer el puntaje (por defecto 0 si no viene)
+    score = data.get('score', 0) 
 
     if not question_text:
         return jsonify({'error': 'question_text is required'}), 400
@@ -44,7 +44,7 @@ def create_question(exercise_id):
         question_body=question_body or "",
         question_type=question_type,
         choices=choices_str,
-        score=score  # <-- Guardar el puntaje
+        score=score
     )
     db.session.add(new_q)
     db.session.commit()
@@ -76,7 +76,7 @@ def update_question(exercise_id, question_id):
     question_body = data.get('question_body')
     question_type = data.get('question_type')
     choices_data = data.get('choices')
-    score = data.get('score', None)  # <-- Leer el puntaje si viene
+    score = data.get('score', None)
 
     # Actualizar campos
     if question_text is not None:
@@ -86,7 +86,7 @@ def update_question(exercise_id, question_id):
     if question_type is not None:
         question.question_type = question_type
     if score is not None:
-        question.score = score  # <-- Actualizar el puntaje
+        question.score = score
 
     import json
     if question_type == 'multiple_choice' and choices_data is not None:
@@ -116,7 +116,7 @@ def list_questions(exercise_id):
             'text': q.question_text,
             'type': q.question_type,
             'choices': q.choices,
-            'score': q.score  # <-- Devolver el puntaje en la respuesta
+            'score': q.score
         })
     return jsonify(results), 200
 
