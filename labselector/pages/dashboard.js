@@ -1,42 +1,35 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { FaSun, FaMoon } from "react-icons/fa";
 
 function Dashboard() {
   const router = useRouter();
   const [exercises, setExercises] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
-
-  // Diccionario: { [exerciseId]: "starting" | "stopping" | null }
-  const [loadingStates, setLoadingStates] = useState({});
-
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Texto y spinner global (para avisos generales)
-  const [statusMessage, setStatusMessage] = useState("");
-  const [showSpinner, setShowSpinner] = useState(false);
-
-  // Datos del nuevo ejercicio (para admin)
+  // Datos para añadir un ejercicio nuevo (solo admin)
   const [newExercise, setNewExercise] = useState({
     title: "",
     description: "",
-    port: "",
   });
-  // Archivo ZIP con el ejercicio completo
+  // Archivo ZIP
   const [exerciseZip, setExerciseZip] = useState(null);
 
-  // Helper: retorna el estado ("starting", "stopping" o null) para el exerciseId
-  const getLoadingLabel = (exerciseId) => {
-    return loadingStates[exerciseId] || null;
-  };
+  // Al montar, cargar preferencia de dark mode desde localStorage
+  useEffect(() => {
+    const storedDarkMode = localStorage.getItem("darkMode");
+    if (storedDarkMode === "true") {
+      setDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
 
-  // Helper para actualizar el estado loadingStates de un ejercicio
-  const setExerciseLoading = (exerciseId, state) => {
-    console.log(`Setting exercise ${exerciseId} to ${state}`);
-    setLoadingStates((prev) => ({ ...prev, [exerciseId]: state }));
-  };
-
-  // Verificar si el usuario está logueado y es admin
+  // Verificar login y admin
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -75,10 +68,16 @@ function Dashboard() {
     fetchExercises();
   }, []);
 
-  // Modo oscuro
+  // Función para alternar modo oscuro y guardar la preferencia
   const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark", !darkMode);
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    if (newMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("darkMode", newMode.toString());
   };
 
   // Subir ZIP y crear nuevo ejercicio (solo admin)
@@ -90,7 +89,7 @@ function Dashboard() {
     const formData = new FormData();
     formData.append("title", newExercise.title);
     formData.append("description", newExercise.description);
-    formData.append("port", newExercise.port);
+    // Ya no se envía el "port"
     formData.append("zipfile", exerciseZip);
 
     try {
@@ -102,15 +101,15 @@ function Dashboard() {
 
       if (response.ok) {
         alert("Exercise added successfully");
-        // Recargar la lista de ejercicios
+        // Recargar ejercicios
         const updatedRes = await fetch("http://localhost:5001/api/exercises", {
           credentials: "include",
         });
         const updatedExercises = await updatedRes.json();
         setExercises(updatedExercises);
 
-        // Limpiar el form
-        setNewExercise({ title: "", description: "", port: "" });
+        // Reset form
+        setNewExercise({ title: "", description: "" });
         setExerciseZip(null);
       } else {
         alert("Failed to add exercise");
@@ -123,10 +122,13 @@ function Dashboard() {
   // Eliminar ejercicio (solo admin)
   const deleteExercise = async (exerciseId) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/exercise/${exerciseId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const response = await fetch(
+        `http://localhost:5001/api/exercise/${exerciseId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
       if (response.ok) {
         setExercises(exercises.filter((ex) => ex.id !== exerciseId));
       } else {
@@ -134,70 +136,6 @@ function Dashboard() {
       }
     } catch (error) {
       console.error("Error deleting exercise:", error);
-    }
-  };
-
-  // Iniciar ejercicio
-  const startExercise = async (exerciseId) => {
-    setExerciseLoading(exerciseId, "starting");
-    setStatusMessage("Iniciando contenedor...");
-    setShowSpinner(true);
-
-    try {
-      const response = await fetch(`http://localhost:5001/api/exercise/${exerciseId}/start`, {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await response.json();
-
-      if (response.ok) {
-        if (data.proxy_url) {
-          // Espera 4 segundos antes de abrir para dar tiempo a que arranque el contenedor
-          setTimeout(() => {
-            window.open(`http://localhost:5001${data.proxy_url}`, "_blank");
-            setStatusMessage("");
-            setShowSpinner(false);
-          }, 4000);
-        } else {
-          alert(data.message || `Exercise ${exerciseId} started`);
-          setStatusMessage("");
-          setShowSpinner(false);
-        }
-      } else {
-        alert(data.error || "Failed to start exercise");
-        setStatusMessage("");
-        setShowSpinner(false);
-      }
-    } catch (error) {
-      console.error("Error starting exercise:", error);
-      alert("Error connecting to the backend");
-      setStatusMessage("");
-      setShowSpinner(false);
-    } finally {
-      setExerciseLoading(exerciseId, null);
-    }
-  };
-
-  // Detener ejercicio
-  const stopExercise = async (exerciseId) => {
-    setExerciseLoading(exerciseId, "stopping");
-
-    try {
-      const response = await fetch(`http://localhost:5001/api/exercise/${exerciseId}/stop`, {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await response.json();
-      if (response.ok) {
-        alert(data.message || `Exercise ${exerciseId} stopped`);
-      } else {
-        alert(data.error || "Failed to stop exercise");
-      }
-    } catch (error) {
-      console.error("Error stopping exercise:", error);
-      alert("Error connecting to the backend");
-    } finally {
-      setExerciseLoading(exerciseId, null);
     }
   };
 
@@ -219,14 +157,23 @@ function Dashboard() {
   };
 
   return (
-    <div className={`${darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"} min-h-screen`}>
+    <div
+      className={`${
+        darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"
+      } min-h-screen`}
+    >
       <div className="container mx-auto p-4">
         {/* Encabezado */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-center">Dashboard</h1>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
           <div className="flex items-center space-x-4">
+            {/* Toggle de tema oscuro */}
             <div className="flex items-center">
-              <FaSun className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-50" : "opacity-100"}`} />
+              <FaSun
+                className={`text-gray-600 dark:text-gray-300 ${
+                  darkMode ? "opacity-50" : "opacity-100"
+                }`}
+              />
               <label className="relative inline-block w-10 h-6 mx-2">
                 <input
                   type="checkbox"
@@ -237,7 +184,11 @@ function Dashboard() {
                 <div className="w-10 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-500 transition"></div>
                 <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full peer-checked:translate-x-4 transition"></div>
               </label>
-              <FaMoon className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-100" : "opacity-50"}`} />
+              <FaMoon
+                className={`text-gray-600 dark:text-gray-300 ${
+                  darkMode ? "opacity-100" : "opacity-50"
+                }`}
+              />
             </div>
             {/* Botón Logout */}
             <button
@@ -249,17 +200,7 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Mensaje global */}
-        {statusMessage && (
-          <div className="mb-4 flex items-center space-x-3">
-            {showSpinner && (
-              <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            )}
-            <span>{statusMessage}</span>
-          </div>
-        )}
-
-        {/* Panel de Admin (subida de ZIP) */}
+        {/* Panel de Admin */}
         {isAdmin && (
           <div className="mb-6 p-4 bg-gray-200 dark:bg-gray-800 border rounded-lg">
             <h2 className="text-lg font-semibold mb-4">Admin Panel</h2>
@@ -268,21 +209,21 @@ function Dashboard() {
                 type="text"
                 placeholder="Exercise Title"
                 value={newExercise.title}
-                onChange={(e) => setNewExercise({ ...newExercise, title: e.target.value })}
+                onChange={(e) =>
+                  setNewExercise({ ...newExercise, title: e.target.value })
+                }
                 className="p-2 border rounded"
               />
               <input
                 type="text"
                 placeholder="Description"
                 value={newExercise.description}
-                onChange={(e) => setNewExercise({ ...newExercise, description: e.target.value })}
-                className="p-2 border rounded"
-              />
-              <input
-                type="number"
-                placeholder="Port"
-                value={newExercise.port}
-                onChange={(e) => setNewExercise({ ...newExercise, port: e.target.value })}
+                onChange={(e) =>
+                  setNewExercise({
+                    ...newExercise,
+                    description: e.target.value,
+                  })
+                }
                 className="p-2 border rounded"
               />
               {/* Subir ZIP */}
@@ -310,47 +251,32 @@ function Dashboard() {
 
         {/* Lista de ejercicios */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {exercises.map((exercise) => {
-            const state = getLoadingLabel(exercise.id);
-            const isLoading = Boolean(state);
-            return (
-              <div
-                key={exercise.id}
-                className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow bg-white dark:bg-gray-800"
-              >
-                <h2 className="text-lg font-semibold">{exercise.title}</h2>
-                <p className="text-sm mb-4">{exercise.description}</p>
+          {exercises.map((exercise) => (
+            <div
+              key={exercise.id}
+              className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow bg-white dark:bg-gray-800"
+            >
+              <h2 className="text-lg font-semibold mb-2">{exercise.title}</h2>
+              <p className="text-sm mb-4">{exercise.description}</p>
 
-                {/* Botón Start */}
-                <button
-                  onClick={() => startExercise(exercise.id)}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  disabled={isLoading}
-                >
-                  {state === "starting" ? "Starting..." : "Start"}
+              {/* Botón que lleva al detalle del ejercicio */}
+              <Link href={`/exercises/${exercise.id}`}>
+                <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                  Ver detalle
                 </button>
+              </Link>
 
-                {/* Botón Stop */}
+              {/* Botón Delete (solo admin) */}
+              {isAdmin && (
                 <button
-                  onClick={() => stopExercise(exercise.id)}
-                  className="ml-2 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-                  disabled={isLoading}
+                  onClick={() => deleteExercise(exercise.id)}
+                  className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                 >
-                  {state === "stopping" ? "Stopping..." : "Stop"}
+                  Delete
                 </button>
-
-                {/* Botón Delete (solo admin) */}
-                {isAdmin && (
-                  <button
-                    onClick={() => deleteExercise(exercise.id)}
-                    className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-            );
-          })}
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

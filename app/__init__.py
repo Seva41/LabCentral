@@ -32,10 +32,12 @@ def create_app():
         from .proxy import proxy_blueprint
         from .auth import auth_blueprint
         from .exercise import exercise_blueprint
+        from .question_blueprint import question_blueprint
 
         app.register_blueprint(auth_blueprint)
         app.register_blueprint(exercise_blueprint)
         app.register_blueprint(proxy_blueprint)
+        app.register_blueprint(question_blueprint)
 
         # Crea las tablas si no existen
         db.create_all()

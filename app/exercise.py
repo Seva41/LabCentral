@@ -25,6 +25,36 @@ def decode_token():
     except jwt.InvalidTokenError:
         return None
 
+def get_free_port():
+    """
+    Retorna el primer puerto libre entre 8000 y 9999
+    que no esté siendo usado por ningún ejercicio en la base de datos.
+    """
+    used_ports = [ex.port for ex in Exercise.query.all()]
+
+    for candidate in range(8000, 10000):
+        if candidate not in used_ports:
+            return candidate
+
+    # Si no encontró ningún puerto, se lanza excepción
+    raise RuntimeError("No free ports available in the specified range")
+
+def get_used_ports_by_containers():
+    """
+    Retorna un set con los puertos HostPort que actualmente
+    están mapeados por contenedores en ejecución.
+    """
+    used = set()
+    for container in client.containers.list():
+        ports_info = container.attrs["NetworkSettings"]["Ports"] or {}
+        for port_spec, host_data in ports_info.items():
+            # host_data podría ser como [{'HostIp': '0.0.0.0', 'HostPort': '8000'}]
+            if host_data:
+                for binding in host_data:
+                    if binding.get("HostPort"):
+                        used.add(int(binding["HostPort"]))
+    return used
+
 @exercise_blueprint.route('/api/exercises', methods=['GET'])
 def get_exercises():
     decoded = decode_token()
@@ -148,6 +178,10 @@ def stop_exercise(exercise_id):
 # Rutas de admin
 @exercise_blueprint.route('/api/exercise', methods=['POST'])
 def add_exercise():
+    """
+    Crea un ejercicio sin ZIP (por JSON), recibiendo port directamente.
+    Se deja tal cual, aunque en la subida con ZIP ya no pedimos puerto.
+    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -169,6 +203,10 @@ def add_exercise():
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>', methods=['DELETE'])
 def delete_exercise(exercise_id):
+    """
+    Elimina el ejercicio de la BD y su carpeta, y se asegura de detener
+    y remover contenedores asociados para liberar el puerto.
+    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -181,19 +219,29 @@ def delete_exercise(exercise_id):
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
 
+    # 1. Detener y eliminar cualquier contenedor asociado a este ejercicio
+    #    que contenga "exercise-<exercise_id>" en su nombre
+    containers = client.containers.list(all=True, filters={"name": f"exercise-{exercise_id}"})
+    for c in containers:
+        try:
+            c.stop()
+        except docker.errors.APIError:
+            pass
+        try:
+            c.remove(force=True)
+        except docker.errors.APIError:
+            pass
+
     base_dir = os.path.abspath(os.path.dirname(__file__))
     dockerfiles_root = os.path.join(base_dir, '..', 'dockerfiles')
-
     relative_path = exercise.dockerfile_path.replace('dockerfiles/', '').strip('/')
 
-    # Ruta absoluta a la carpeta
-    folder_path = os.path.join(dockerfiles_root, relative_path)
-
-    # 1. Elimina el registro de la BD
+    # 2. Elimina el registro de la BD
     db.session.delete(exercise)
     db.session.commit()
 
-    # 2. Borra la carpeta (si existe)
+    # 3. Borra la carpeta (si existe)
+    folder_path = os.path.join(dockerfiles_root, relative_path)
     if os.path.isdir(folder_path):
         try:
             shutil.rmtree(folder_path)
@@ -208,6 +256,8 @@ def add_exercise_with_zip():
     """
     Crea un nuevo ejercicio subiendo un ZIP que contiene
     Dockerfile y archivos extra, descomprimiéndolo en /dockerfiles/<slug>.
+
+    El puerto se asigna automáticamente, sin pedirle al usuario que lo ingrese.
     """
     decoded = decode_token()
     if not decoded:
@@ -220,24 +270,26 @@ def add_exercise_with_zip():
     # 1. Leer campos de FormData
     title = request.form.get('title', '').strip()
     description = request.form.get('description', '').strip()
-    port = request.form.get('port', '').strip()
     zipfile_obj = request.files.get('zipfile', None)
 
     if not title or not zipfile_obj:
         return jsonify({'error': 'Missing title or zipfile'}), 400
 
-    # 2. Crear slug a partir del título
+    # 2. Asignar puerto automáticamente
+    port = get_free_port()
+
+    # 3. Crear slug a partir del título
     slug = re.sub(r'[^A-Za-z0-9]+', '_', title.lower()).strip('_')
     if not slug:
         slug = "exercise"
 
-    # 3. Crear carpeta /dockerfiles/<slug> (al mismo nivel que /app)
+    # 4. Crear carpeta /dockerfiles/<slug>
     base_dir = os.path.abspath(os.path.dirname(__file__))
     dockerfiles_dir = os.path.join(base_dir, '..', 'dockerfiles')
     exercise_dir = os.path.join(dockerfiles_dir, slug)
     os.makedirs(exercise_dir, exist_ok=True)
 
-    # 4. Guardar el ZIP temporalmente, y luego descomprimir
+    # 5. Guardar el ZIP temporalmente, y luego descomprimir
     zip_path = os.path.join(exercise_dir, secure_filename(zipfile_obj.filename))
     zipfile_obj.save(zip_path)
 
@@ -247,15 +299,14 @@ def add_exercise_with_zip():
     except zipfile.BadZipFile:
         return jsonify({'error': 'Invalid or corrupted ZIP file'}), 400
     finally:
-        # Remove the original ZIP file after extraction if you prefer
-        os.remove(zip_path)
+        os.remove(zip_path)  # Elimina el ZIP original tras la extracción
 
-    # 5. Crear registro en la BD
+    # 6. Crear registro en la BD
     new_exercise = Exercise(
         title=title,
         description=description,
         dockerfile_path=f"dockerfiles/{slug}",
-        port=int(port) if port else 8000
+        port=port
     )
     db.session.add(new_exercise)
     db.session.commit()

@@ -30,3 +30,22 @@ class Exercise(db.Model):
     description = db.Column(db.Text, nullable=False)
     dockerfile_path = db.Column(db.String(200), nullable=False)
     port = db.Column(db.Integer, nullable=False)
+
+class ExerciseQuestion(db.Model):
+    __tablename__ = 'exercise_question'
+    id = db.Column(db.Integer, primary_key=True)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+    question_text = db.Column(db.String(255), nullable=False)
+    question_body = db.Column(db.Text, nullable=True)
+    question_type = db.Column(db.String(50), default='abierta')
+    choices = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    score = db.Column(db.Integer, nullable=False, default=0)
+
+class ExerciseAnswer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey('exercise_question.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    answer_text = db.Column(db.Text, nullable=False)
+    score = db.Column(db.Float, nullable=True)
+    feedback = db.Column(db.Text, nullable=True)

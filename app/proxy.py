@@ -1,7 +1,8 @@
 import requests
+import re
 from flask import Blueprint, request, jsonify, Response
+from urllib.parse import urljoin
 from .exercise import decode_token, client
-from .models import Exercise
 
 proxy_blueprint = Blueprint('proxy', __name__)
 
@@ -13,38 +14,73 @@ def get_container_ip(container_name):
     first_network = list(networks.keys())[0]
     return networks[first_network]['IPAddress']
 
-@proxy_blueprint.route('/api/exercise/<int:exercise_id>/proxy', defaults={'path': ''}, methods=['GET','POST','PUT','PATCH','DELETE'])
-@proxy_blueprint.route('/api/exercise/<int:exercise_id>/proxy/<path:path>', methods=['GET','POST','PUT','PATCH','DELETE'])
-def proxy_to_exercise(exercise_id, path):
-    # 1. Leer el JWT
+@proxy_blueprint.route('/api/exercise/<int:exercise_id>/proxy/', defaults={'path': ''}, methods=['GET','POST','PUT','PATCH','DELETE','OPTIONS'])
+@proxy_blueprint.route('/api/exercise/<int:exercise_id>/proxy/<path:path>', methods=['GET','POST','PUT','PATCH','DELETE','OPTIONS'])
+def proxy_to_exercise(exercise_id, path=""):
     decoded = decode_token()
     if not decoded:
         return jsonify({"error": "Unauthorized"}), 401
-    user_id = decoded["user_id"]
 
-    # 2. Verificar que el contenedor es del usuario
+    user_id = decoded["user_id"]
+    proxy_prefix = f"/api/exercise/{exercise_id}/proxy"
+
     container_name = f"user-{user_id}-exercise-{exercise_id}"
+
     try:
         container = client.containers.get(container_name)
-    except:
-        return jsonify({"error": "Container not found"}), 404
+    except Exception as e:
+        return jsonify({"error": f"Container not found: {str(e)}"}), 404
 
-    # 3. Obtener IP interna
     container_ip = get_container_ip(container_name)
     if not container_ip:
         return jsonify({"error": "No container IP found"}), 500
 
-    # 4. Reenviar la petición con requests
     internal_url = f"http://{container_ip}:5000/{path}"
-    method = request.method
-    headers = {k: v for k, v in request.headers if k.lower() != 'host'}
-    data = request.get_data()
-    params = request.args
 
-    resp = requests.request(method, internal_url, headers=headers, params=params, data=data)
+    try:
+        resp = requests.request(
+            method=request.method,
+            url=internal_url,
+            headers={key: value for key, value in request.headers if key.lower() != 'host'},
+            params=request.args,
+            data=request.get_data(),
+            allow_redirects=False,
+        )
 
-    # 5. Construir la respuesta
-    excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-    response_headers = [(name, value) for (name, value) in resp.headers.items() if name.lower() not in excluded_headers]
+        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
+        headers = [(name, value) for name, value in resp.headers.items() if name.lower() not in excluded_headers]
 
-    return Response(resp.content, resp.status_code, response_headers)
+        content = resp.content
+        content_type = resp.headers.get('Content-Type', '')
+
+        if 'text/html' in content_type:
+            html_content = resp.text
+            proxy_prefix = f"/api/exercise/{exercise_id}/proxy/"
+
+            # Reescribe URLs absolutas (empiezan con /)
+            html_content = re.sub(
+                r'(href|src)=["\']/(?!api/)',
+                rf'\1="{proxy_prefix}',
+                html_content
+            )
+
+            # Reescribe URLs relativas (empiezan con ./)
+            html_content = re.sub(
+                r'(href|src)=("|\')\./',
+                rf'\1=\2{proxy_prefix}',
+                html_content
+            )
+
+            # Manejo especial para forms con action=""
+            html_content = re.sub(
+                r'action=("|\')\s*\1',
+                rf'action="{proxy_prefix}{path}"',
+                html_content
+            )
+
+            content = html_content.encode('utf-8')
+
+        return Response(content, resp.status_code, headers=[(name, value) for name, value in headers if name.lower() not in excluded_headers])
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 502
