@@ -9,8 +9,7 @@ export default function ExerciseDetail() {
 
   const [exercise, setExercise] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [containerStatus, setContainerStatus] = useState("stopped"); // 'stopped', 'starting', 'running', 'stopping'
 
   // Respuestas que el usuario edita localmente antes de enviar
   const [answers, setAnswers] = useState({});
@@ -143,9 +142,7 @@ export default function ExerciseDetail() {
 
   // ===================== Start/Stop contenedor =====================
   const startExercise = async () => {
-    setLoading(true);
-    setStatusMessage("Iniciando contenedor...");
-
+    setContainerStatus("starting");
     try {
       const response = await fetch(
         `http://localhost:5001/api/exercise/${id}/start`,
@@ -160,31 +157,25 @@ export default function ExerciseDetail() {
         if (data.proxy_url) {
           setTimeout(() => {
             window.open(`http://localhost:5001${data.proxy_url}`, "_blank");
-            setStatusMessage("");
-            setLoading(false);
+            setContainerStatus("running");
           }, 3000);
         } else {
           alert(data.message || "Exercise started");
-          setStatusMessage("");
-          setLoading(false);
+          setContainerStatus("running");
         }
       } else {
         alert(data.error || "Failed to start exercise");
-        setStatusMessage("");
-        setLoading(false);
+        setContainerStatus("stopped");
       }
     } catch (error) {
       console.error("Error starting exercise:", error);
       alert("Error connecting to the backend");
-      setStatusMessage("");
-      setLoading(false);
+      setContainerStatus("stopped");
     }
   };
 
   const stopExercise = async () => {
-    setLoading(true);
-    setStatusMessage("Deteniendo contenedor...");
-
+    setContainerStatus("stopping");
     try {
       const response = await fetch(
         `http://localhost:5001/api/exercise/${id}/stop`,
@@ -197,15 +188,15 @@ export default function ExerciseDetail() {
 
       if (response.ok) {
         alert(data.message || "Exercise stopped");
+        setContainerStatus("stopped");
       } else {
         alert(data.error || "Failed to stop exercise");
+        setContainerStatus("running");
       }
     } catch (error) {
       console.error("Error stopping exercise:", error);
       alert("Error connecting to the backend");
-    } finally {
-      setStatusMessage("");
-      setLoading(false);
+      setContainerStatus("running");
     }
   };
 
@@ -465,29 +456,39 @@ export default function ExerciseDetail() {
         <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
           <h1 className="text-2xl font-bold mb-2">{exercise.title}</h1>
           <p className="mb-4">{exercise.description}</p>
-          {statusMessage && (
-            <div className="mb-4 flex items-center space-x-2">
-              {loading && (
-                <div className="w-5 h-5 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              )}
-              <span>{statusMessage}</span>
-            </div>
-          )}
           <div className="space-x-2">
-            <button
-              onClick={startExercise}
-              disabled={loading}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Start
-            </button>
-            <button
-              onClick={stopExercise}
-              disabled={loading}
-              className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-            >
-              Stop
-            </button>
+            {containerStatus === "stopped" && (
+              <button
+                onClick={startExercise}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Start
+              </button>
+            )}
+            {containerStatus === "starting" && (
+              <button
+                disabled
+                className="bg-blue-400 text-white px-4 py-2 rounded cursor-not-allowed"
+              >
+                Starting...
+              </button>
+            )}
+            {containerStatus === "running" && (
+              <button
+                onClick={stopExercise}
+                className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+              >
+                Stop
+              </button>
+            )}
+            {containerStatus === "stopping" && (
+              <button
+                disabled
+                className="bg-yellow-400 text-white px-4 py-2 rounded cursor-not-allowed"
+              >
+                Stopping...
+              </button>
+            )}
           </div>
         </div>
 
