@@ -19,16 +19,16 @@ def create_question(exercise_id):
 
     data = request.json
     question_text = data.get('question_text')  # Título principal de la pregunta
-    question_body = data.get('question_body')    # Texto adicional, opcional
+    question_body = data.get('question_body')  # Texto adicional, opcional
     question_type = data.get('question_type', 'abierta')
+    score = data.get('score', 0)  # <-- Leer el puntaje (por defecto 0 si no viene)
 
     if not question_text:
         return jsonify({'error': 'question_text is required'}), 400
 
     # Procesar choices
-    choices_data = data.get('choices', [])
-    # Guardarlos como string JSON
     import json
+    choices_data = data.get('choices', [])
     choices_str = ""
     if question_type == "multiple_choice":
         # Validar que sea al menos 2 opciones
@@ -43,12 +43,14 @@ def create_question(exercise_id):
         question_text=question_text,
         question_body=question_body or "",
         question_type=question_type,
-        choices=choices_str
+        choices=choices_str,
+        score=score  # <-- Guardar el puntaje
     )
     db.session.add(new_q)
     db.session.commit()
 
     return jsonify({'message': 'Question created', 'question_id': new_q.id}), 201
+
 
 @question_blueprint.route('/api/exercise/<int:exercise_id>/question/<int:question_id>', methods=['PATCH'])
 def update_question(exercise_id, question_id):
@@ -74,13 +76,17 @@ def update_question(exercise_id, question_id):
     question_body = data.get('question_body')
     question_type = data.get('question_type')
     choices_data = data.get('choices')
+    score = data.get('score', None)  # <-- Leer el puntaje si viene
 
+    # Actualizar campos
     if question_text is not None:
         question.question_text = question_text
     if question_body is not None:
         question.question_body = question_body
     if question_type is not None:
         question.question_type = question_type
+    if score is not None:
+        question.score = score  # <-- Actualizar el puntaje
 
     import json
     if question_type == 'multiple_choice' and choices_data is not None:
@@ -102,7 +108,6 @@ def list_questions(exercise_id):
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
     
-    # (No es solo para admin, porque los alumnos necesitan verlas)
     questions = ExerciseQuestion.query.filter_by(exercise_id=exercise_id, is_active=True).all()
     results = []
     for q in questions:
@@ -110,13 +115,17 @@ def list_questions(exercise_id):
             'id': q.id,
             'text': q.question_text,
             'type': q.question_type,
-            'choices': q.choices
+            'choices': q.choices,
+            'score': q.score  # <-- Devolver el puntaje en la respuesta
         })
     return jsonify(results), 200
 
 
 @question_blueprint.route('/api/exercise/<int:exercise_id>/question/<int:question_id>/answer', methods=['POST'])
 def submit_answer(exercise_id, question_id):
+    """
+    Envía la respuesta de un alumno a una pregunta concreta.
+    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -194,7 +203,7 @@ def evaluate_answer(exercise_id, answer_id):
     if not answer:
         return jsonify({'error': 'Answer not found'}), 404
 
-    # También podríamos verificar que la answer pertenece a una pregunta del ejercicio dado
+    # Verificar que la respuesta pertenece a una pregunta de este ejercicio
     question = ExerciseQuestion.query.get(answer.question_id)
     if not question or question.exercise_id != exercise_id:
         return jsonify({'error': 'Answer does not belong to this exercise'}), 400
@@ -208,8 +217,12 @@ def evaluate_answer(exercise_id, answer_id):
     db.session.commit()
     return jsonify({'message': 'Answer evaluated'}), 200
 
+
 @question_blueprint.route('/api/exercise/<int:exercise_id>/question/<int:question_id>', methods=['DELETE'])
 def delete_question(exercise_id, question_id):
+    """
+    Elimina una pregunta (solo admin), y sus respuestas asociadas.
+    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -224,19 +237,23 @@ def delete_question(exercise_id, question_id):
     if not question:
         return jsonify({'error': 'Question not found'}), 404
 
-    # Eliminar las respuestas asociadas a esta pregunta:
+    # Eliminar las respuestas asociadas a esta pregunta
     answers = ExerciseAnswer.query.filter_by(question_id=question.id).all()
     for ans in answers:
         db.session.delete(ans)
 
-    # Eliminar la pregunta
     db.session.delete(question)
     db.session.commit()
 
     return jsonify({'message': 'Question deleted'}), 200
 
+
 @question_blueprint.route('/api/exercise/<int:exercise_id>/my_answers', methods=['GET'])
 def get_my_answers(exercise_id):
+    """
+    Retorna un diccionario { question_id: answer_text } con las respuestas
+    que el usuario actual ha enviado para las preguntas de este ejercicio.
+    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401

@@ -35,26 +35,12 @@ class ExerciseQuestion(db.Model):
     __tablename__ = 'exercise_question'
     id = db.Column(db.Integer, primary_key=True)
     exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
-
-    # Título corto de la pregunta
     question_text = db.Column(db.String(255), nullable=False)
-
-    # Texto adicional, explicación o enunciado largo (opcional)
     question_body = db.Column(db.Text, nullable=True)
-
-    # Tipo de pregunta: 'abierta' o 'multiple_choice'
     question_type = db.Column(db.String(50), default='abierta')
-
-    # choices guardado como JSON: [
-    #   { "id": 0, "text": "Opción A", "correct": false },
-    #   { "id": 1, "text": "Opción B", "correct": true },
-    #   ...
-    # ]
-    choices = db.Column(db.Text, nullable=True)  # Se puede usar un JSON field
-
-    # Indica si está activa o no
+    choices = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True)
-
+    score = db.Column(db.Integer, nullable=False, default=0)
 
 class ExerciseAnswer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
