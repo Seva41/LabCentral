@@ -22,6 +22,7 @@ export default function ExerciseDetail() {
   // === Formulario para crear preguntas (admin) ===
   const [newQuestion, setNewQuestion] = useState({
     question_text: "",
+    score: 0,
     question_type: "abierta",
     choicesArray: [
       { id: 0, text: "", correct: false },
@@ -35,6 +36,7 @@ export default function ExerciseDetail() {
     question_text: "",
     question_type: "abierta",
     choices: "",
+    score: 0,
   });
 
   // Estado para el modo oscuro
@@ -297,8 +299,8 @@ export default function ExerciseDetail() {
     const payload = {
       question_text: newQuestion.question_text,
       question_type: newQuestion.question_type,
-      choices:
-        newQuestion.question_type === "multiple_choice" ? finalChoices : "",
+      choices: newQuestion.question_type === "multiple_choice" ? finalChoices : "",
+      score: newQuestion.score,
     };
 
     try {
@@ -321,10 +323,12 @@ export default function ExerciseDetail() {
             text: payload.question_text,
             type: payload.question_type,
             choices: payload.choices,
+            score: payload.score,
           },
         ]);
         setNewQuestion({
           question_text: "",
+          score: 0,
           question_type: "abierta",
           choicesArray: [
             { id: 0, text: "", correct: false },
@@ -370,6 +374,7 @@ export default function ExerciseDetail() {
       question_text: question.text,
       question_type: question.type,
       choices: question.choices || "",
+      score: question.score || 0,
     });
   };
 
@@ -403,6 +408,7 @@ export default function ExerciseDetail() {
                   text: editQuestionData.question_text,
                   type: editQuestionData.question_type,
                   choices: editQuestionData.choices,
+                  score: editQuestionData.score,
                 }
               : q
           )
@@ -424,6 +430,9 @@ export default function ExerciseDetail() {
       </div>
     );
   }
+
+  // Calcular puntaje total sumando el puntaje de cada pregunta
+  const totalScore = questions.reduce((total, q) => total + (q.score || 0), 0);
 
   return (
     // Envolvemos toda la página en un contenedor que cambia de colores según darkMode
@@ -519,6 +528,20 @@ export default function ExerciseDetail() {
                         }))
                       }
                     />
+                    <label className="block mb-2">
+                      <span className="text-sm">Puntaje:</span>
+                      <input
+                        type="number"
+                        className="border p-2 w-full rounded"
+                        value={editQuestionData.score}
+                        onChange={(e) =>
+                          setEditQuestionData((prev) => ({
+                            ...prev,
+                            score: Number(e.target.value),
+                          }))
+                        }
+                      />
+                    </label>
                     <select
                       className="border p-2 mb-2 block"
                       value={editQuestionData.question_type}
@@ -564,7 +587,10 @@ export default function ExerciseDetail() {
                 ) : (
                   <>
                     <div className="flex-1 mb-2 md:mb-0">
-                      <p className="font-medium">{q.text}</p>
+                      <p className="font-medium">
+                        {q.text}{" "}
+                        <span className="text-sm text-gray-500">(Puntaje: {q.score})</span>
+                      </p>
                       {q.type === "multiple_choice" && (
                         <div className="my-2">
                           {(() => {
@@ -706,87 +732,109 @@ export default function ExerciseDetail() {
               </div>
             );
           })}
-          {isAdmin && (
-            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 border rounded">
-              <h3 className="font-bold mb-2">Crear nueva pregunta</h3>
-              <label className="block mb-2">
-                <span className="text-sm">Texto de la pregunta:</span>
-                <input
-                  type="text"
-                  className="border p-2 w-full rounded"
-                  value={newQuestion.question_text}
-                  onChange={(e) =>
-                    setNewQuestion((prev) => ({
-                      ...prev,
-                      question_text: e.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label className="block mb-2">
-                <span className="text-sm">Tipo de pregunta:</span>
-                <select
-                  className="border p-2 w-full rounded"
-                  value={newQuestion.question_type}
-                  onChange={(e) =>
-                    setNewQuestion((prev) => ({
-                      ...prev,
-                      question_type: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="abierta">Abierta</option>
-                  <option value="multiple_choice">Opción Múltiple</option>
-                </select>
-              </label>
-              {newQuestion.question_type === "multiple_choice" && (
-                <div className="mt-2 p-2 bg-white dark:bg-gray-800 border rounded">
-                  <h4 className="font-semibold mb-2">Opciones</h4>
-                  {newQuestion.choicesArray.map((opt, idx) => (
-                    <div key={opt.id} className="flex items-center mb-2">
-                      <input
-                        type="radio"
-                        name="correctOption"
-                        checked={opt.correct}
-                        onChange={() => markOptionAsCorrect(idx)}
-                        className="mr-2"
-                      />
-                      <input
-                        type="text"
-                        className="border p-1 rounded flex-1 mr-2"
-                        placeholder={`Opción #${idx + 1}`}
-                        value={opt.text}
-                        onChange={(e) => handleOptionTextChange(idx, e.target.value)}
-                      />
-                      {newQuestion.choicesArray.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={() => removeOption(idx)}
-                          className="bg-red-500 text-white px-2 py-1 rounded"
-                        >
-                          X
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addNewOption}
-                    className="bg-blue-500 text-white px-3 py-1 rounded"
-                  >
-                    Añadir opción
-                  </button>
-                </div>
-              )}
-              <button
-                onClick={createQuestion}
-                className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Crear Pregunta
-              </button>
-            </div>
-          )}
+          {/* Mostrar puntaje total del ejercicio */}
+          <div className="mt-4 p-4 bg-gray-200 dark:bg-gray-700 rounded">
+            <p className="text-lg font-semibold">
+              Puntaje total: {totalScore}
+            </p>
+          </div>
         </div>
+
+        {/* Sección para crear nueva pregunta (admin) */}
+        {isAdmin && (
+          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 border rounded">
+            <h3 className="font-bold mb-2">Crear nueva pregunta</h3>
+            <label className="block mb-2">
+              <span className="text-sm">Texto de la pregunta:</span>
+              <input
+                type="text"
+                className="border p-2 w-full rounded"
+                value={newQuestion.question_text}
+                onChange={(e) =>
+                  setNewQuestion((prev) => ({
+                    ...prev,
+                    question_text: e.target.value,
+                  }))
+                }
+              />
+            </label>
+            <label className="block mb-2">
+              <span className="text-sm">Puntaje:</span>
+              <input
+                type="number"
+                className="border p-2 w-full rounded"
+                value={newQuestion.score}
+                onChange={(e) =>
+                  setNewQuestion((prev) => ({
+                    ...prev,
+                    score: Number(e.target.value),
+                  }))
+                }
+              />
+            </label>
+            <label className="block mb-2">
+              <span className="text-sm">Tipo de pregunta:</span>
+              <select
+                className="border p-2 w-full rounded"
+                value={newQuestion.question_type}
+                onChange={(e) =>
+                  setNewQuestion((prev) => ({
+                    ...prev,
+                    question_type: e.target.value,
+                  }))
+                }
+              >
+                <option value="abierta">Abierta</option>
+                <option value="multiple_choice">Opción Múltiple</option>
+              </select>
+            </label>
+            {newQuestion.question_type === "multiple_choice" && (
+              <div className="mt-2 p-2 bg-white dark:bg-gray-800 border rounded">
+                <h4 className="font-semibold mb-2">Opciones</h4>
+                {newQuestion.choicesArray.map((opt, idx) => (
+                  <div key={opt.id} className="flex items-center mb-2">
+                    <input
+                      type="radio"
+                      name="correctOption"
+                      checked={opt.correct}
+                      onChange={() => markOptionAsCorrect(idx)}
+                      className="mr-2"
+                    />
+                    <input
+                      type="text"
+                      className="border p-1 rounded flex-1 mr-2"
+                      placeholder={`Opción #${idx + 1}`}
+                      value={opt.text}
+                      onChange={(e) => handleOptionTextChange(idx, e.target.value)}
+                    />
+                    {newQuestion.choicesArray.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => removeOption(idx)}
+                        className="bg-red-500 text-white px-2 py-1 rounded"
+                      >
+                        X
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addNewOption}
+                  className="bg-blue-500 text-white px-3 py-1 rounded"
+                >
+                  Añadir opción
+                </button>
+              </div>
+            )}
+            <button
+              onClick={createQuestion}
+              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Crear Pregunta
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
