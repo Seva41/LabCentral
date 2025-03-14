@@ -51,7 +51,6 @@ jobs:
 
       # 7. Instalar dependencias del backend
       - name: Install backend dependencies
-        working-directory: app
         run: |
           python -m venv venv
           source venv/bin/activate
