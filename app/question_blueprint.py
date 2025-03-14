@@ -210,13 +210,10 @@ def evaluate_answer(exercise_id, answer_id):
 
 @question_blueprint.route('/api/exercise/<int:exercise_id>/question/<int:question_id>', methods=['DELETE'])
 def delete_question(exercise_id, question_id):
-    """
-    Elimina una pregunta (solo admin).
-    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
-    
+
     user = User.query.get(decoded['user_id'])
     if not user or not user.is_admin:
         return jsonify({'error': 'Forbidden'}), 403
@@ -227,8 +224,15 @@ def delete_question(exercise_id, question_id):
     if not question:
         return jsonify({'error': 'Question not found'}), 404
 
+    # Eliminar las respuestas asociadas a esta pregunta:
+    answers = ExerciseAnswer.query.filter_by(question_id=question.id).all()
+    for ans in answers:
+        db.session.delete(ans)
+
+    # Eliminar la pregunta
     db.session.delete(question)
     db.session.commit()
+
     return jsonify({'message': 'Question deleted'}), 200
 
 @question_blueprint.route('/api/exercise/<int:exercise_id>/my_answers', methods=['GET'])
