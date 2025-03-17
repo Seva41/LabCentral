@@ -15,7 +15,7 @@ export default function ResetPassword() {
       await axios.post(`${API_URL}/api/request_password_reset`, { email });
       setMessage("Si el correo está registrado, se ha enviado un enlace de recuperación.");
     } catch (error) {
-      setMessage("Ocurrió un error. Inténtalo nuevamente.");
+      setMessage(`Ocurrió un error. Inténtalo nuevamente. Detalles: ${error.message}`);
     }
   };
 
