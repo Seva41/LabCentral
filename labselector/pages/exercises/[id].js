@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FaSun, FaMoon } from "react-icons/fa";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function ExerciseDetail() {
   const router = useRouter();
   const { id } = router.query;
@@ -60,7 +62,7 @@ export default function ExerciseDetail() {
 
     const checkUser = async () => {
       try {
-        const res = await fetch("http://localhost:5001/api/user", {
+        const res = await fetch(`${API_URL}/api/user`, {
           credentials: "include",
         });
         const data = await res.json();
@@ -77,7 +79,7 @@ export default function ExerciseDetail() {
 
     const fetchExerciseDetail = async () => {
       try {
-        const res = await fetch(`http://localhost:5001/api/exercise/${id}`, {
+        const res = await fetch(`${API_URL}/api/exercise/${id}`, {
           credentials: "include",
         });
         const data = await res.json();
@@ -94,7 +96,7 @@ export default function ExerciseDetail() {
     const fetchQuestions = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5001/api/exercise/${id}/questions`,
+          `${API_URL}/api/exercise/${id}/questions`,
           { credentials: "include" }
         );
         const data = await res.json();
@@ -112,7 +114,7 @@ export default function ExerciseDetail() {
     const fetchMyAnswers = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5001/api/exercise/${id}/my_answers`,
+          `${API_URL}/api/exercise/${id}/my_answers`,
           { credentials: "include" }
         );
         const data = await res.json();
@@ -147,7 +149,7 @@ export default function ExerciseDetail() {
     setContainerStatus("starting");
     try {
       const response = await fetch(
-        `http://localhost:5001/api/exercise/${id}/start`,
+        `${API_URL}/api/exercise/${id}/start`,
         {
           method: "POST",
           credentials: "include",
@@ -158,7 +160,7 @@ export default function ExerciseDetail() {
       if (response.ok) {
         if (data.proxy_url) {
           setTimeout(() => {
-            window.open(`http://localhost:5001${data.proxy_url}`, "_blank");
+            window.open(`${API_URL}${data.proxy_url}`, "_blank");
             setContainerStatus("running");
           }, 3000);
         } else {
@@ -180,7 +182,7 @@ export default function ExerciseDetail() {
     setContainerStatus("stopping");
     try {
       const response = await fetch(
-        `http://localhost:5001/api/exercise/${id}/stop`,
+        `${API_URL}/api/exercise/${id}/stop`,
         {
           method: "POST",
           credentials: "include",
@@ -216,7 +218,7 @@ export default function ExerciseDetail() {
 
     try {
       const res = await fetch(
-        `http://localhost:5001/api/exercise/${id}/question/${questionId}/answer`,
+        `${API_URL}/api/exercise/${id}/question/${questionId}/answer`,
         {
           method: "POST",
           credentials: "include",
@@ -305,7 +307,7 @@ export default function ExerciseDetail() {
 
     try {
       const res = await fetch(
-        `http://localhost:5001/api/exercise/${id}/questions`,
+        `${API_URL}/api/exercise/${id}/questions`,
         {
           method: "POST",
           credentials: "include",
@@ -349,7 +351,7 @@ export default function ExerciseDetail() {
 
     try {
       const res = await fetch(
-        `http://localhost:5001/api/exercise/${id}/question/${questionId}`,
+        `${API_URL}/api/exercise/${id}/question/${questionId}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -389,7 +391,7 @@ export default function ExerciseDetail() {
     }
     try {
       const res = await fetch(
-        `http://localhost:5001/api/exercise/${id}/question/${editingQuestionId}`,
+        `${API_URL}/api/exercise/${id}/question/${editingQuestionId}`,
         {
           method: "PATCH",
           credentials: "include",

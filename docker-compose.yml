@@ -24,10 +24,13 @@ services:
     build:
       context: ./labselector
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://172.18.0.3:5001
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://172.18.0.3:5001
     command: "npm run start"
     networks:
       - lab_app_net

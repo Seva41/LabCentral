@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+// Se define la URL base a partir de la variable de entorno
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 function ExerciseManager({ exercise, token }) {
   const [exerciseUrl, setExerciseUrl] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -8,7 +11,7 @@ function ExerciseManager({ exercise, token }) {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5001/api/exercise/${exercise.id}/start`,
+        `${API_URL}/api/exercise/${exercise.id}/start`,
         {
           method: "POST",
           headers: {
@@ -33,7 +36,7 @@ function ExerciseManager({ exercise, token }) {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5001/api/exercise/${exercise.id}/stop`,
+        `${API_URL}/api/exercise/${exercise.id}/stop`,
         {
           method: "POST",
           headers: {

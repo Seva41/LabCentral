@@ -2,6 +2,9 @@ import { useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 
+// Definir la URL base del backend a partir de la variable de entorno
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -9,9 +12,9 @@ export default function ResetPassword() {
   const handleReset = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:5001/api/request_password_reset", { email });
+      await axios.post(`${API_URL}/api/request_password_reset`, { email });
       setMessage("Si el correo está registrado, se ha enviado un enlace de recuperación.");
-    } catch {
+    } catch (error) {
       setMessage("Ocurrió un error. Inténtalo nuevamente.");
     }
   };
@@ -22,7 +25,9 @@ export default function ResetPassword() {
         onSubmit={handleReset}
         className="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl"
       >
-        <h1 className="text-2xl font-bold text-center text-gray-800">Recuperar Contraseña</h1>
+        <h1 className="text-2xl font-bold text-center text-gray-800">
+          Recuperar Contraseña
+        </h1>
 
         <div className="space-y-4">
           <input
