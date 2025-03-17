@@ -55,6 +55,18 @@ def get_used_ports_by_containers():
                         used.add(int(binding["HostPort"]))
     return used
 
+def safe_extract(zip_file, extract_path):
+    """
+    Extrae los archivos del ZIP en 'extract_path' tras verificar que ninguna ruta salga de este directorio.
+    """
+    abs_extract_path = os.path.abspath(extract_path)
+    for member in zip_file.infolist():
+        member_path = os.path.join(extract_path, member.filename)
+        abs_member_path = os.path.abspath(member_path)
+        if not abs_member_path.startswith(abs_extract_path + os.sep):
+            raise Exception("Zip Slip detected: " + member.filename)
+    zip_file.extractall(extract_path)
+
 @exercise_blueprint.route('/api/exercises', methods=['GET'])
 def get_exercises():
     decoded = decode_token()
@@ -254,9 +266,8 @@ def delete_exercise(exercise_id):
 @exercise_blueprint.route('/api/exercise_with_zip', methods=['POST'])
 def add_exercise_with_zip():
     """
-    Crea un nuevo ejercicio subiendo un ZIP que contiene
-    Dockerfile y archivos extra, descomprimiéndolo en /dockerfiles/<slug>.
-
+    Crea un nuevo ejercicio subiendo un ZIP que contiene Dockerfile y archivos extra, 
+    descomprimiéndolo en /dockerfiles/<slug>.
     El puerto se asigna automáticamente, sin pedirle al usuario que lo ingrese.
     """
     decoded = decode_token()
@@ -279,6 +290,7 @@ def add_exercise_with_zip():
     port = get_free_port()
 
     # 3. Crear slug a partir del título
+    import re
     slug = re.sub(r'[^A-Za-z0-9]+', '_', title.lower()).strip('_')
     if not slug:
         slug = "exercise"
@@ -289,17 +301,17 @@ def add_exercise_with_zip():
     exercise_dir = os.path.join(dockerfiles_dir, slug)
     os.makedirs(exercise_dir, exist_ok=True)
 
-    # 5. Guardar el ZIP temporalmente, y luego descomprimir
+    # 5. Guardar el ZIP temporalmente, y luego descomprimir de forma segura
     zip_path = os.path.join(exercise_dir, secure_filename(zipfile_obj.filename))
     zipfile_obj.save(zip_path)
 
     try:
         with zipfile.ZipFile(zip_path, 'r') as zf:
-            zf.extractall(exercise_dir)
-    except zipfile.BadZipFile:
-        return jsonify({'error': 'Invalid or corrupted ZIP file'}), 400
+            safe_extract(zf, exercise_dir)
+    except Exception as e:
+        return jsonify({'error': 'Invalid or corrupted ZIP file: ' + str(e)}), 400
     finally:
-        os.remove(zip_path)  # Elimina el ZIP original tras la extracción
+        os.remove(zip_path)
 
     # 6. Crear registro en la BD
     new_exercise = Exercise(
