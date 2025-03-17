@@ -26,7 +26,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
-    CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["http://192.168.191.100:3000", "http://172.18.0.3:3000","http://localhost:3000"]}})
+    CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["http://192.168.191.100:3000", "http://172.18.0.3:3000","http://localhost:3000","http://10.80.3.10:3000"]}})
 
     # Configurar Flask-Limiter sin pasar el app en el constructor
     limiter = Limiter(
