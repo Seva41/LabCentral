@@ -1,20 +1,25 @@
+# Etapa de construcción
 FROM node:18-alpine AS builder
 WORKDIR /app
-
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-
-COPY package.json package-lock.json ./
-RUN npm install --production
-
+# Copiar los archivos de dependencias
+COPY package*.json ./
+# Instalar dependencias
+RUN npm install
+# Copiar el resto del código
 COPY . .
+# Ejecutar el build de Next.js
 RUN npm run build
 
+# Etapa de ejecución
 FROM node:18-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# Copiar el build y archivos necesarios desde la etapa de construcción
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package.json ./package.json
+# Instalar únicamente las dependencias de producción
+RUN npm install --production
 EXPOSE 3000
-CMD ["npm", "start"]
+# Ejecutar la aplicación usando npx (que usa el binario local de next)
+CMD ["npx", "next", "start"]
