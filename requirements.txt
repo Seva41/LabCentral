@@ -6,3 +6,4 @@ flask_bcrypt
 flask_migrate
 docker
 pyjwt
+bleach
