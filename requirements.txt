@@ -8,3 +8,4 @@ flask-limiter
 docker
 pyjwt
 bleach
+gunicorn
