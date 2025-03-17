@@ -4,6 +4,7 @@ flask_login
 flask_cors
 flask_bcrypt
 flask_migrate
+flask-limiter
 docker
 pyjwt
 bleach

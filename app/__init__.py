@@ -1,16 +1,17 @@
 import os
 import json
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_cors import CORS
 from flask_migrate import Migrate
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_limiter.errors import RateLimitExceeded
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 instance_dir = os.path.join(basedir, '..', 'instance')
-
 os.makedirs(instance_dir, exist_ok=True)
-
 db_path = os.path.join(instance_dir, 'app.db')
 
 db = SQLAlchemy()
@@ -27,7 +28,20 @@ def create_app():
     bcrypt.init_app(app)
     CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
 
+    # Configurar Flask-Limiter sin pasar el app en el constructor
+    limiter = Limiter(
+        key_func=get_remote_address,
+        default_limits=["800 per minute"]
+    )
+    limiter.init_app(app)
+
+    # Personalizar la respuesta cuando se exceda el límite
+    @app.errorhandler(RateLimitExceeded)
+    def ratelimit_handler(e):
+        return jsonify({"error": "Límite de peticiones excedido. Intente de nuevo más tarde."}), 429
+
     with app.app_context():
+        # registro de blueprints y carga de ejercicios
         from .models import Exercise
         from .proxy import proxy_blueprint
         from .auth import auth_blueprint
@@ -39,16 +53,13 @@ def create_app():
         app.register_blueprint(proxy_blueprint)
         app.register_blueprint(question_blueprint)
 
-        # Crea las tablas si no existen
         db.create_all()
 
-        # Si no hay ejercicios en la BD, cargarlos desde exercises.json
         if not Exercise.query.first():
             json_path = "/app/app/exercises.json"
             try:
                 with open(json_path, 'r', encoding='utf-8') as f:
                     exercises_data = json.load(f)
-
                 for item in exercises_data:
                     new_exercise = Exercise(
                         title=item["title"],
@@ -57,7 +68,6 @@ def create_app():
                         port=item["port"]
                     )
                     db.session.add(new_exercise)
-
                 db.session.commit()
                 print("Ejercicios creados exitosamente desde exercises.json")
             except FileNotFoundError:
