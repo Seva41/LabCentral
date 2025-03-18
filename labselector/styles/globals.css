@@ -3,33 +3,68 @@
 @tailwind utilities;
 
 /* Garantiza que html, body y #__next ocupen el 100% del viewport */
-html, body, #__next {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
-  
-  /* Diseño principal de la aplicación */
-  .layout {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-  
-  /* El contenido principal toma todo el espacio disponible menos el footer */
-  .content {
-    flex: 1;
-    min-height: calc(100vh - 4rem); /* Ajusta 4rem según la altura del footer */
-  }
-  
-  /* Estilos para el footer */
-  footer {
-    height: 4rem; /* Altura fija del footer */
-    background-color: #1a202c; /* Gris oscuro */
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-  
+html,
+body,
+#__next {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Fondo con gradiente difuminado */
+body {
+  @apply bg-gradient-to-br from-[#1e3a8a] via-[#3b82f6] to-[#a5b4fc] text-white;
+}
+
+/* Diseño principal de la aplicación */
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* El contenido principal toma todo el espacio disponible menos el footer */
+.content {
+  flex: 1;
+  min-height: calc(100vh - 4rem); /* Ajusta 4rem según la altura del footer */
+}
+
+/* Estilos para el footer */
+footer {
+  height: 4rem; /* Altura fija del footer */
+  background-color: #1a202c; /* Gris oscuro */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Botón moderno con efecto hover */
+.button {
+  @apply bg-gradient-to-r from-[#3b82f6] to-[#9333ea] text-white font-semibold py-2 px-6 rounded-lg shadow-lg
+         transition-transform duration-300 ease-in-out transform
+         hover:scale-105 hover:shadow-xl
+         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#14b8a6];
+}
+
+/* Tarjeta con efecto traslúcido (glassmorphism) */
+.card {
+  @apply bg-white bg-opacity-10 backdrop-blur-lg p-6 rounded-lg shadow-lg border border-white border-opacity-20;
+}
+
+/* Input estilizado */
+.input {
+  @apply w-full px-4 py-2 
+         rounded-xl
+         bg-white bg-opacity-20 backdrop-blur-sm
+         text-white placeholder-gray-200
+         border border-white border-opacity-20
+         focus:ring-2 focus:ring-purple-400
+         transition-all duration-200 ease-in-out
+         transition-colors duration-200 ease-in-out;
+}
+
+.input:focus {
+  @apply shadow-lg; /* Agrega sombra al hacer foco */
+}

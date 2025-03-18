@@ -31,48 +31,52 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl"
-      >
-        <h1 className="text-2xl font-bold text-center text-gray-800">Iniciar Sesión</h1>
+    // Usa la clase .layout (y/o .content si lo deseas) para mantener consistencia.
+    <div className="layout flex items-center justify-center min-h-screen">
+      
+      {/* Usa la clase .card para el efecto “glassmorphism” y un contenedor elegante */}
+      <form onSubmit={handleLogin} className="card w-full max-w-md p-8 space-y-6">
+        <h1 className="text-2xl font-bold text-center">Iniciar Sesión</h1>
 
         <div className="space-y-4">
+          {/* Usa la clase .input para un estilo consistente con tu globals.css */}
           <input
             type="email"
             placeholder="Correo Electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="input"
           />
+
           <input
             type="password"
             placeholder="Contraseña"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="input"
           />
         </div>
 
+        {/* Aplica la clase .button para el estilo de botón gradiente */}
         <button
           type="submit"
-          className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-400"
+          className="button w-full"
         >
           Iniciar Sesión
         </button>
 
-        <div className="text-sm text-center text-gray-600">
+        {/* Sección de enlaces y recordatorios */}
+        <div className="text-sm text-center">
           <p>
-            <Link href="/reset-password" className="text-blue-500 hover:underline">
+            <Link href="/reset-password" className="underline hover:text-gray-200">
               ¿Olvidaste tu contraseña?
             </Link>
           </p>
           <p className="mt-2">
             ¿No tienes una cuenta?{" "}
-            <Link href="/signup" className="text-blue-500 hover:underline">
+            <Link href="/signup" className="underline hover:text-gray-200">
               Regístrate aquí
             </Link>
           </p>
