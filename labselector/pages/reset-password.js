@@ -17,49 +17,41 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleReset}
-        className="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl"
-      >
-        <h1 className="text-2xl font-bold text-center text-gray-800">Recuperar Contraseña</h1>
+    // Contenedor flex con min-h-screen
+    <div className="min-h-screen flex flex-col">
+      <main className="flex-1 flex items-center justify-center">
+        <form onSubmit={handleReset} className="card shadow-lg space-y-6 w-full max-w-md p-6">
+          <h1 className="text-2xl font-bold text-center">Recuperar Contraseña</h1>
 
-        <div className="space-y-4">
-          <input
-            type="email"
-            placeholder="Correo Electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+          <div>
+            <input
+              type="email"
+              placeholder="Correo Electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="input"
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-400"
-        >
-          Enviar Enlace
-        </button>
+          <button type="submit" className="button bg-blue-700 hover:bg-blue-900 w-full">
+            Enviar Enlace
+          </button>
 
-        {message && (
-          <p className="mt-4 text-sm text-center text-gray-600">
-            {message}
-          </p>
-        )}
+          {message && <p className="text-sm text-center">{message}</p>}
 
-        {/* Botón para volver al login */}
-        <div className="text-center">
-          <Link href="/login">
-            <button
-              type="button"
-              className="mt-4 px-4 py-2 text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-500 hover:text-white focus:ring-2 focus:ring-blue-400"
-            >
-              Volver al Login
-            </button>
-          </Link>
-        </div>
-      </form>
+          <div className="text-center">
+            <Link href="/login">
+              <button
+                type="button"
+                className="button bg-gradient-to-r from-[#3b82f6] to-[#9333ea] w-full mt-4"
+              >
+                Volver al Login
+              </button>
+            </Link>
+          </div>
+        </form>
+      </main>
     </div>
   );
 }

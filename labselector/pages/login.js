@@ -31,53 +31,55 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl"
-      >
-        <h1 className="text-2xl font-bold text-center text-gray-800">Iniciar Sesión</h1>
+    <div className="layout flex items-center justify-center min-h-screen">
+      <div className="w-full max-w-md px-4">
+        <h1 className="text-6xl font-bold text-center mb-14">LabCentral</h1>
 
-        <div className="space-y-4">
-          <input
-            type="email"
-            placeholder="Correo Electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        {/* Form con estilo .card para un efecto glassmorphism */}
+        <form onSubmit={handleLogin} className="card w-full p-8 space-y-6">
+          <h2 className="text-2xl font-bold text-center">Inicio de Sesión</h2>
 
-        <button
-          type="submit"
-          className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-400"
-        >
-          Iniciar Sesión
-        </button>
+          <div className="space-y-4">
+            <input
+              type="email"
+              placeholder="Correo Electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="input"
+            />
 
-        <div className="text-sm text-center text-gray-600">
-          <p>
-            <Link href="/reset-password" className="text-blue-500 hover:underline">
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </p>
-          <p className="mt-2">
-            ¿No tienes una cuenta?{" "}
-            <Link href="/signup" className="text-blue-500 hover:underline">
-              Regístrate aquí
-            </Link>
-          </p>
-        </div>
-      </form>
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="input"
+            />
+          </div>
+
+          {/* Botón con gradiente */}
+          <button type="submit" className="button w-full bg-gradient-to-r from-[#3b82f6] to-[#9333ea]">
+            Iniciar Sesión
+          </button>
+
+          {/* Sección de enlaces y recordatorios */}
+          <div className="text-sm text-center">
+            <p>
+              <Link href="/reset-password" className="underline hover:text-gray-200">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </p>
+            <p className="mt-2">
+              ¿No tienes una cuenta?{" "}
+              <Link href="/signup" className="underline hover:text-gray-200">
+                Regístrate aquí
+              </Link>
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

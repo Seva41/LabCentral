@@ -2,34 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Garantiza que html, body y #__next ocupen el 100% del viewport */
-html, body, #__next {
-    height: 100%;
-    margin: 0;
-    padding: 0;
-  }
-  
-  /* Diseño principal de la aplicación */
-  .layout {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-  
-  /* El contenido principal toma todo el espacio disponible menos el footer */
-  .content {
-    flex: 1;
-    min-height: calc(100vh - 4rem); /* Ajusta 4rem según la altura del footer */
-  }
-  
-  /* Estilos para el footer */
-  footer {
-    height: 4rem; /* Altura fija del footer */
-    background-color: #1a202c; /* Gris oscuro */
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-  
+/* Reinicia márgenes y alturas en html, body, #__next */
+html,
+body,
+#__next {
+  @apply h-full m-0 p-0;
+}
+
+/* Fondo con gradiente difuminado, fijo y cubierta completa */
+body {
+  @apply bg-gradient-to-br from-[#1e3a8a] via-[#3b82f6] to-[#a5b4fc]
+         bg-no-repeat bg-cover bg-fixed
+         text-white;
+}
+
+body.dark {
+  @apply bg-gray-900 text-gray-100;
+}
+
+/* Contenedor principal de la app */
+.layout {
+  @apply flex flex-col h-full;
+}
+
+/* El contenido principal toma todo el espacio disponible menos el footer */
+.content {
+  /* Ajusta la altura con calc(100vh - 3rem) para dejar espacio al footer */
+  min-height: calc(100vh - 3rem);
+  padding-bottom: 6rem; /* Espacio extra para que no tape el contenido */
+  flex: 1;
+}
+
+/* Footer fijo en el flujo normal, 4rem de altura */
+footer {
+  height: 3rem;
+  @apply fixed bottom-0 left-0 right-0 h-16
+         bg-gradient-to-r from-[#1e3a8a] via-[#3b82f6] to-[#1e3a8a] bg-opacity-20
+         backdrop-blur-md
+         border border-black border-opacity-5
+         text-white flex items-center justify-center px-4 shadow-lg;
+}
+
+/* Botón moderno con efecto hover y gradiente */
+.button {
+  @apply text-white font-semibold py-2 px-6 rounded-lg shadow-lg
+         transition-transform duration-300 ease-in-out transform
+         hover:scale-105 hover:shadow-xl
+         focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#14b8a6];
+}
+
+/* Clase opcional para gradiente */
+.button-gradient {
+  @apply bg-gradient-to-r from-[#3b82f6] to-[#9333ea];
+}
+
+
+/* Tarjeta con efecto traslúcido (glassmorphism) */
+.card {
+  @apply bg-white bg-opacity-10 backdrop-blur-lg p-6 rounded-lg shadow-lg border border-white border-opacity-20;
+}
+
+/* Input estilizado */
+.input {
+  @apply w-full px-4 py-2
+         rounded-xl
+         bg-white bg-opacity-20 backdrop-blur-sm
+         text-white placeholder-gray-200
+         border border-white border-opacity-20
+         focus:ring-2 focus:ring-purple-400
+         transition-all duration-200 ease-in-out
+         transition-colors;
+}
+
+.input:focus {
+  @apply shadow-lg;
+}
