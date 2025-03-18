@@ -1,7 +1,6 @@
 export default function AdminPanel({
     newQuestion,
     setNewQuestion,
-    setExerciseZip,
     createQuestion,
   }) {
     // Funciones para opciones en multiple_choice
@@ -119,14 +118,14 @@ export default function AdminPanel({
             <button
               type="button"
               onClick={addNewOption}
-              className="button bg-blue-600 hover:bg-blue-700 mt-2"
+              className="button button-gradient"
             >
               Añadir opción
             </button>
           </div>
         )}
   
-        <button onClick={createQuestion} className="button bg-blue-600 hover:bg-blue-700">
+        <button onClick={createQuestion} className="button button-gradient">
           Crear Pregunta
         </button>
       </div>

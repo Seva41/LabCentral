@@ -5,11 +5,15 @@ import { AuthProvider } from "../context/AuthContext";
 export default function MyApp({ Component, pageProps }) {
   return (
     <AuthProvider>
-      <div className="h-screen overflow-y-auto pb-16">
-        <Component {...pageProps} />
-      </div>
+      {/* Un contenedor flexible a lo alto */}
+      <div className="flex flex-col min-h-screen">
+        {/* Área de contenido crece para llenar el espacio */}
+        <main className="flex-1">
+          <Component {...pageProps} />
+        </main>
 
-      <Footer />
+        <Footer />
+      </div>
     </AuthProvider>
   );
 }

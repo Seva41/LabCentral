@@ -252,7 +252,7 @@ function Dashboard() {
             </div>
             <button
               onClick={addExerciseWithZip}
-              className="button mt-4"
+              className="button button-gradient"
             >
               Add Exercise (ZIP)
             </button>

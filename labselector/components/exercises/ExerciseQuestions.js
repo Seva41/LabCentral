@@ -12,11 +12,12 @@ export default function ExerciseQuestions({
     cancelEditing,
     saveEditedQuestion,
     totalScore,
+    className = "",
   }) {
     return (
-      <div className="card shadow space-y-4">
+      <div className={`card shadow space-y-4 ${className}`}>
         <h2 className="text-xl font-semibold">Preguntas</h2>
-        
+  
         {questions.length === 0 && (
           <p className="text-gray-200">No hay preguntas configuradas.</p>
         )}
@@ -33,7 +34,10 @@ export default function ExerciseQuestions({
                   className="input"
                   value={editQuestionData.question_text}
                   onChange={(e) =>
-                    setEditQuestionData((prev) => ({ ...prev, question_text: e.target.value }))
+                    setEditQuestionData((prev) => ({
+                      ...prev,
+                      question_text: e.target.value,
+                    }))
                   }
                 />
                 <label className="block mt-2">
@@ -43,7 +47,10 @@ export default function ExerciseQuestions({
                     className="input"
                     value={editQuestionData.score}
                     onChange={(e) =>
-                      setEditQuestionData((prev) => ({ ...prev, score: Number(e.target.value) }))
+                      setEditQuestionData((prev) => ({
+                        ...prev,
+                        score: Number(e.target.value),
+                      }))
                     }
                   />
                 </label>
@@ -51,7 +58,10 @@ export default function ExerciseQuestions({
                   className="input mt-2"
                   value={editQuestionData.question_type}
                   onChange={(e) =>
-                    setEditQuestionData((prev) => ({ ...prev, question_type: e.target.value }))
+                    setEditQuestionData((prev) => ({
+                      ...prev,
+                      question_type: e.target.value,
+                    }))
                   }
                 >
                   <option value="abierta">Abierta</option>
@@ -65,15 +75,24 @@ export default function ExerciseQuestions({
                     placeholder='Opciones en JSON (ej: [{"text":"op1","correct":true}, ...])'
                     value={editQuestionData.choices}
                     onChange={(e) =>
-                      setEditQuestionData((prev) => ({ ...prev, choices: e.target.value }))
+                      setEditQuestionData((prev) => ({
+                        ...prev,
+                        choices: e.target.value,
+                      }))
                     }
                   />
                 )}
                 <div className="space-x-2 mt-2">
-                  <button onClick={saveEditedQuestion} className="button bg-green-600 hover:bg-green-700">
+                  <button
+                    onClick={saveEditedQuestion}
+                    className="button bg-green-600 hover:bg-green-700"
+                  >
                     Guardar
                   </button>
-                  <button onClick={cancelEditing} className="button bg-gray-500 hover:bg-gray-600">
+                  <button
+                    onClick={cancelEditing}
+                    className="button bg-gray-500 hover:bg-gray-600"
+                  >
                     Cancelar
                   </button>
                 </div>
@@ -83,22 +102,24 @@ export default function ExerciseQuestions({
   
           // Modo lectura normal
           return (
-            <div key={q.id} className="border-b border-white border-opacity-20 pb-4 mb-4 last:mb-0 last:border-b-0">
+            <div
+              key={q.id}
+              className="border-b border-white border-opacity-20 pb-4 mb-4 last:mb-0 last:border-b-0"
+            >
               <p className="font-medium">
-                {q.text} <span className="text-sm text-gray-300"> (Puntaje: {q.score || 0})</span>
+                {q.text}{" "}
+                <span className="text-sm text-gray-300">
+                  (Puntaje: {q.score || 0})
+                </span>
               </p>
+  
               {/* Ejemplo rápido para type=abierta o multiple_choice */}
               {q.type === "abierta" ? (
                 <div className="mt-2">
                   {alreadyAnswered ? (
                     <>
                       <p className="text-green-200 text-sm">Tu respuesta:</p>
-                      <textarea
-                        className="input"
-                        rows={2}
-                        disabled
-                        value={serverAnswer}
-                      />
+                      <textarea className="input" rows={2} disabled value={serverAnswer} />
                     </>
                   ) : (
                     <>
@@ -109,7 +130,10 @@ export default function ExerciseQuestions({
                         value={answers[q.id] || ""}
                         onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                       />
-                      <button onClick={() => submitAnswer(q.id)} className="button bg-blue-600 hover:bg-blue-700 mt-2">
+                      <button
+                        onClick={() => submitAnswer(q.id)}
+                        className="button button-gradient"
+                      >
                         Enviar
                       </button>
                     </>
@@ -156,7 +180,6 @@ export default function ExerciseQuestions({
     );
   }
   
-
   function MultipleChoiceQuestion({
     q,
     alreadyAnswered,
@@ -170,7 +193,7 @@ export default function ExerciseQuestions({
       parsedChoices = q.choices ? JSON.parse(q.choices) : [];
       if (!Array.isArray(parsedChoices)) parsedChoices = [];
     } catch (err) {
-      return <p className="text-sm text-red-200">Error al parsear choices</p>;
+    return <p className="text-sm text-red-200">Error al parsear choices: {err.message}</p>;
     }
   
     const localAnswer = answers[q.id] || "";
@@ -182,9 +205,7 @@ export default function ExerciseQuestions({
         )}
   
         {parsedChoices.map((opt, idx) => {
-          const isChecked = alreadyAnswered
-            ? serverAnswer === opt.text
-            : localAnswer === opt.text;
+          const isChecked = alreadyAnswered ? serverAnswer === opt.text : localAnswer === opt.text;
           return (
             <label key={idx} className="flex items-center mb-1">
               <input
@@ -201,7 +222,10 @@ export default function ExerciseQuestions({
         })}
   
         {!alreadyAnswered && parsedChoices.length > 0 && (
-          <button onClick={() => submitAnswer(q.id)} className="button bg-blue-600 hover:bg-blue-700 mt-2">
+          <button
+            onClick={() => submitAnswer(q.id)}
+            className="button button-gradient"
+          >
             Enviar
           </button>
         )}

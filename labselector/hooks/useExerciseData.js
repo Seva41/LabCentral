@@ -1,4 +1,3 @@
-// hooks/useExerciseData.js
 import { useEffect, useState } from "react";
 
 export default function useExerciseData(exerciseId, router) {

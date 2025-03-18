@@ -12,8 +12,12 @@ body,
 /* Fondo con gradiente difuminado, fijo y cubierta completa */
 body {
   @apply bg-gradient-to-br from-[#1e3a8a] via-[#3b82f6] to-[#a5b4fc]
-         text-white
-         bg-no-repeat bg-cover bg-fixed;
+         bg-no-repeat bg-cover bg-fixed
+         text-white;
+}
+
+body.dark {
+  @apply bg-gray-900 text-gray-100;
 }
 
 /* Contenedor principal de la app */
@@ -23,25 +27,35 @@ body {
 
 /* El contenido principal toma todo el espacio disponible menos el footer */
 .content {
-  /* Ajusta la altura con calc(100vh - 4rem) para dejar espacio al footer */
-  min-height: calc(100vh - 4rem);
+  /* Ajusta la altura con calc(100vh - 3rem) para dejar espacio al footer */
+  min-height: calc(100vh - 3rem);
   padding-bottom: 6rem; /* Espacio extra para que no tape el contenido */
   flex: 1;
 }
 
 /* Footer fijo en el flujo normal, 4rem de altura */
 footer {
-  height: 4rem;
-  @apply bg-gray-900 text-white flex items-center justify-center text-center;
+  height: 3rem;
+  @apply fixed bottom-0 left-0 right-0 h-16
+         bg-gradient-to-r from-[#1e3a8a] via-[#3b82f6] to-[#1e3a8a] bg-opacity-20
+         backdrop-blur-md
+         border border-black border-opacity-5
+         text-white flex items-center justify-center px-4 shadow-lg;
 }
 
 /* Botón moderno con efecto hover y gradiente */
 .button {
-  @apply bg-gradient-to-r from-[#3b82f6] to-[#9333ea] text-white font-semibold py-2 px-6 rounded-lg shadow-lg
+  @apply text-white font-semibold py-2 px-6 rounded-lg shadow-lg
          transition-transform duration-300 ease-in-out transform
          hover:scale-105 hover:shadow-xl
          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#14b8a6];
 }
+
+/* Clase opcional para gradiente */
+.button-gradient {
+  @apply bg-gradient-to-r from-[#3b82f6] to-[#9333ea];
+}
+
 
 /* Tarjeta con efecto traslúcido (glassmorphism) */
 .card {
