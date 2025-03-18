@@ -435,18 +435,30 @@ export default function ExerciseDetail() {
   const totalScore = questions.reduce((total, q) => total + (q.score || 0), 0);
 
   return (
-    // Envolvemos toda la página en un contenedor que cambia de colores según darkMode
-    <div className={`${darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"} min-h-screen`}>
-      <div className="p-4 max-w-5xl mx-auto space-y-6">
+    <div
+      className={`layout min-h-screen w-full ${
+        darkMode
+          ? "bg-gray-900 text-gray-100"
+          : "" /* En modo claro, se hereda el gradiente definido en body */
+      }`}
+    >
+      <div className="content w-full px-6 pb-40 space-y-6">
         {/* Encabezado: Volver al Dashboard y switch de modo oscuro */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center pt-4">
           <Link href="/dashboard">
-            <button className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+            {/* Botón para regresar al Dashboard (usa .button si deseas el gradiente o estilo global) */}
+            <button className="button bg-gray-600 hover:bg-gray-700">
               &larr; Volver al Dashboard
             </button>
           </Link>
+  
+          {/* Toggle modo oscuro */}
           <div className="flex items-center">
-            <FaSun className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-50" : "opacity-100"}`} />
+            <FaSun
+              className={`text-gray-600 dark:text-gray-300 ${
+                darkMode ? "opacity-50" : "opacity-100"
+              }`}
+            />
             <label className="relative inline-block w-10 h-6 mx-2">
               <input
                 type="checkbox"
@@ -457,69 +469,72 @@ export default function ExerciseDetail() {
               <div className="w-10 h-6 bg-gray-300 rounded-full peer peer-checked:bg-blue-500 transition"></div>
               <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full peer-checked:translate-x-4 transition"></div>
             </label>
-            <FaMoon className={`text-gray-600 dark:text-gray-300 ${darkMode ? "opacity-100" : "opacity-50"}`} />
+            <FaMoon
+              className={`text-gray-600 dark:text-gray-300 ${
+                darkMode ? "opacity-100" : "opacity-50"
+              }`}
+            />
           </div>
         </div>
-
+  
         {/* Detalle del ejercicio */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
-          <h1 className="text-2xl font-bold mb-2">{exercise.title}</h1>
-          <p className="mb-4">{exercise.description}</p>
+        <div className="card shadow space-y-4">
+          <h1 className="text-2xl font-bold">{exercise.title}</h1>
+          <p>{exercise.description}</p>
           <div className="space-x-2">
+            {/* Botón Start/Stop con color plano */}
             {containerStatus === "stopped" && (
               <button
                 onClick={startExercise}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                className="button bg-green-600 hover:bg-green-700"
               >
                 Start
               </button>
             )}
             {containerStatus === "starting" && (
-              <button
-                disabled
-                className="bg-blue-400 text-white px-4 py-2 rounded cursor-not-allowed"
-              >
+              <button disabled className="button bg-green-400 cursor-not-allowed">
                 Starting...
               </button>
             )}
             {containerStatus === "running" && (
               <button
                 onClick={stopExercise}
-                className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+                className="button bg-red-600 hover:bg-red-700"
               >
                 Stop
               </button>
             )}
             {containerStatus === "stopping" && (
-              <button
-                disabled
-                className="bg-yellow-400 text-white px-4 py-2 rounded cursor-not-allowed"
-              >
+              <button disabled className="button bg-red-400 cursor-not-allowed">
                 Stopping...
               </button>
             )}
           </div>
         </div>
-
+  
         {/* Sección de preguntas */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
-          <h2 className="text-xl font-semibold mb-4">Preguntas</h2>
+        <div className="card shadow space-y-4">
+          <h2 className="text-xl font-semibold">Preguntas</h2>
           {questions.length === 0 && (
-            <p className="text-gray-600">No hay preguntas configuradas.</p>
+            <p className="text-gray-200 dark:text-gray-400">
+              No hay preguntas configuradas.
+            </p>
           )}
+  
           {questions.map((q) => {
             const serverAnswer = myServerAnswers[q.id];
             const alreadyAnswered = Boolean(serverAnswer);
-
+  
             return (
               <div
                 key={q.id}
-                className="border-b border-gray-200 dark:border-gray-700 py-4 flex flex-col md:flex-row md:items-center md:justify-between"
+                className="border-b border-white border-opacity-20 pb-4 mb-4 last:mb-0 last:border-b-0"
               >
                 {editingQuestionId === q.id ? (
-                  <div className="w-full">
+                  // Edición de pregunta (ADMIN)
+                  <div className="space-y-2">
                     <input
-                      className="border w-full p-2 mb-2"
+                      className="input"
                       value={editQuestionData.question_text}
                       onChange={(e) =>
                         setEditQuestionData((prev) => ({
@@ -528,11 +543,11 @@ export default function ExerciseDetail() {
                         }))
                       }
                     />
-                    <label className="block mb-2">
+                    <label className="block">
                       <span className="text-sm">Puntaje:</span>
                       <input
                         type="number"
-                        className="border p-2 w-full rounded"
+                        className="input mt-1"
                         value={editQuestionData.score}
                         onChange={(e) =>
                           setEditQuestionData((prev) => ({
@@ -543,7 +558,7 @@ export default function ExerciseDetail() {
                       />
                     </label>
                     <select
-                      className="border p-2 mb-2 block"
+                      className="input"
                       value={editQuestionData.question_type}
                       onChange={(e) =>
                         setEditQuestionData((prev) => ({
@@ -555,9 +570,10 @@ export default function ExerciseDetail() {
                       <option value="abierta">Abierta</option>
                       <option value="multiple_choice">Opción Múltiple</option>
                     </select>
+  
                     {editQuestionData.question_type === "multiple_choice" && (
                       <textarea
-                        className="border p-2 mb-2 w-full"
+                        className="input"
                         rows={3}
                         placeholder='Opciones separadas por línea o JSON (ej: ["op1", "op2"])'
                         value={editQuestionData.choices}
@@ -569,34 +585,34 @@ export default function ExerciseDetail() {
                         }
                       />
                     )}
-                    <div className="space-x-2">
-                      <button
-                        onClick={saveEditedQuestion}
-                        className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                      >
+  
+                    <div className="space-x-2 mt-2">
+                      <button onClick={saveEditedQuestion} className="button bg-green-600 hover:bg-green-700">
                         Guardar
                       </button>
-                      <button
-                        onClick={cancelEditing}
-                        className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-                      >
+                      <button onClick={cancelEditing} className="button bg-gray-500 hover:bg-gray-600">
                         Cancelar
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <div className="flex-1 mb-2 md:mb-0">
+                  // Vista normal de pregunta
+                  <div className="md:flex md:justify-between space-y-2 md:space-y-0 md:items-center">
+                    <div className="flex-1">
                       <p className="font-medium">
                         {q.text}{" "}
-                        <span className="text-sm text-gray-500">(Puntaje: {q.score})</span>
+                        <span className="text-sm text-gray-300">
+                          (Puntaje: {q.score})
+                        </span>
                       </p>
+  
+                      {/* Múltiple opción */}
                       {q.type === "multiple_choice" && (
                         <div className="my-2">
                           {(() => {
                             if (!q.choices || !q.choices.trim()) {
                               return (
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-gray-400">
                                   No hay opciones configuradas.
                                 </p>
                               );
@@ -606,16 +622,15 @@ export default function ExerciseDetail() {
                               const data = JSON.parse(q.choices);
                               parsed = Array.isArray(data) ? data : [];
                             } catch (e) {
-                              console.error("Error parseando choices:", e);
                               return (
-                                <p className="text-sm text-red-500">
+                                <p className="text-sm text-red-400">
                                   Error al leer las opciones.
                                 </p>
                               );
                             }
                             if (parsed.length === 0) {
                               return (
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-gray-400">
                                   No hay opciones configuradas.
                                 </p>
                               );
@@ -657,16 +672,18 @@ export default function ExerciseDetail() {
                           })()}
                         </div>
                       )}
+  
+                      {/* Respuestas para pregunta abierta */}
                       <div className="mt-2">
                         {q.type === "abierta" && (
                           <>
                             {alreadyAnswered ? (
                               <>
-                                <p className="text-sm text-green-700">
+                                <p className="text-sm text-green-200">
                                   Tu respuesta (modo lectura):
                                 </p>
                                 <textarea
-                                  className="border w-full p-2 rounded mb-2"
+                                  className="input cursor-not-allowed"
                                   rows={2}
                                   disabled
                                   value={serverAnswer}
@@ -675,7 +692,7 @@ export default function ExerciseDetail() {
                             ) : (
                               <>
                                 <textarea
-                                  className="border w-full p-2 rounded mb-2"
+                                  className="input"
                                   rows={2}
                                   placeholder="Tu respuesta..."
                                   value={answers[q.id] || ""}
@@ -685,7 +702,7 @@ export default function ExerciseDetail() {
                                 />
                                 <button
                                   onClick={() => submitAnswer(q.id)}
-                                  className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
+                                  className="button bg-blue-600 hover:bg-blue-700 mt-2"
                                 >
                                   Enviar respuesta
                                 </button>
@@ -693,62 +710,59 @@ export default function ExerciseDetail() {
                             )}
                           </>
                         )}
-                        {q.type === "multiple_choice" && (
-                          <>
-                            {alreadyAnswered ? (
-                              <p className="text-sm text-green-700">
-                                Respuesta enviada: {serverAnswer}
-                              </p>
-                            ) : (
-                              <button
-                                onClick={() => submitAnswer(q.id)}
-                                className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700"
-                              >
-                                Enviar respuesta
-                              </button>
-                            )}
-                          </>
+                        {q.type === "multiple_choice" && !alreadyAnswered && (
+                          <button
+                            onClick={() => submitAnswer(q.id)}
+                            className="button bg-blue-600 hover:bg-blue-700 mt-2"
+                          >
+                            Enviar respuesta
+                          </button>
+                        )}
+                        {q.type === "multiple_choice" && alreadyAnswered && (
+                          <p className="text-sm text-green-200">
+                            Respuesta enviada: {serverAnswer}
+                          </p>
                         )}
                       </div>
                     </div>
+  
+                    {/* Botones Editar/Eliminar para admin */}
                     {isAdmin && (
-                      <div className="flex space-x-2">
+                      <div className="mt-2 md:mt-0 flex space-x-2">
                         <button
                           onClick={() => startEditingQuestion(q)}
-                          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                          className="button bg-green-600 hover:bg-green-700"
                         >
                           Editar
                         </button>
                         <button
                           onClick={() => deleteQuestion(q.id)}
-                          className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                          className="button bg-red-600 hover:bg-red-700"
                         >
                           Eliminar
                         </button>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             );
           })}
-          {/* Mostrar puntaje total del ejercicio */}
-          <div className="mt-4 p-4 bg-gray-200 dark:bg-gray-700 rounded">
-            <p className="text-lg font-semibold">
-              Puntaje total: {totalScore}
-            </p>
-          </div>
+        {/* Puntaje total con efecto de tarjeta transparente */}
+        <div className="card p-4 mt-4 shadow">
+          <p className="text-lg font-semibold">Puntaje total: {totalScore}</p>
         </div>
+      </div>
 
-        {/* Sección para crear nueva pregunta (admin) */}
-        {isAdmin && (
-          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 border rounded">
-            <h3 className="font-bold mb-2">Crear nueva pregunta</h3>
+      {/* Crear nueva pregunta (admin) */}
+      {isAdmin && (
+        <div className="card shadow">
+          <h3 className="text-xl font-semibold mb-2">Crear nueva pregunta</h3>
             <label className="block mb-2">
               <span className="text-sm">Texto de la pregunta:</span>
               <input
                 type="text"
-                className="border p-2 w-full rounded"
+                className="input mt-1"
                 value={newQuestion.question_text}
                 onChange={(e) =>
                   setNewQuestion((prev) => ({
@@ -758,11 +772,12 @@ export default function ExerciseDetail() {
                 }
               />
             </label>
+  
             <label className="block mb-2">
               <span className="text-sm">Puntaje:</span>
               <input
                 type="number"
-                className="border p-2 w-full rounded"
+                className="input mt-1"
                 value={newQuestion.score}
                 onChange={(e) =>
                   setNewQuestion((prev) => ({
@@ -772,10 +787,11 @@ export default function ExerciseDetail() {
                 }
               />
             </label>
+  
             <label className="block mb-2">
               <span className="text-sm">Tipo de pregunta:</span>
               <select
-                className="border p-2 w-full rounded"
+                className="input mt-1"
                 value={newQuestion.question_type}
                 onChange={(e) =>
                   setNewQuestion((prev) => ({
@@ -788,8 +804,9 @@ export default function ExerciseDetail() {
                 <option value="multiple_choice">Opción Múltiple</option>
               </select>
             </label>
+  
             {newQuestion.question_type === "multiple_choice" && (
-              <div className="mt-2 p-2 bg-white dark:bg-gray-800 border rounded">
+              <div className="mt-2 p-2 bg-white dark:bg-gray-800 border border-white border-opacity-20 rounded">
                 <h4 className="font-semibold mb-2">Opciones</h4>
                 {newQuestion.choicesArray.map((opt, idx) => (
                   <div key={opt.id} className="flex items-center mb-2">
@@ -802,7 +819,7 @@ export default function ExerciseDetail() {
                     />
                     <input
                       type="text"
-                      className="border p-1 rounded flex-1 mr-2"
+                      className="input flex-1 mr-2"
                       placeholder={`Opción #${idx + 1}`}
                       value={opt.text}
                       onChange={(e) => handleOptionTextChange(idx, e.target.value)}
@@ -811,7 +828,7 @@ export default function ExerciseDetail() {
                       <button
                         type="button"
                         onClick={() => removeOption(idx)}
-                        className="bg-red-500 text-white px-2 py-1 rounded"
+                        className="button bg-red-600 hover:bg-red-700 px-2 py-1"
                       >
                         X
                       </button>
@@ -821,21 +838,22 @@ export default function ExerciseDetail() {
                 <button
                   type="button"
                   onClick={addNewOption}
-                  className="bg-blue-500 text-white px-3 py-1 rounded"
+                  className="button bg-blue-600 hover:bg-blue-700 mt-2"
                 >
                   Añadir opción
                 </button>
               </div>
             )}
-            <button
-              onClick={createQuestion}
-              className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              Crear Pregunta
-            </button>
-          </div>
-        )}
-      </div>
+  
+          <button
+            onClick={createQuestion}
+            className="button bg-blue-600 hover:bg-blue-700 mt-4"
+          >
+            Crear Pregunta
+          </button>
+        </div>
+      )}
     </div>
-  );
+  </div>
+);
 }

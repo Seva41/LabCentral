@@ -2,45 +2,40 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Garantiza que html, body y #__next ocupen el 100% del viewport */
+/* Reinicia márgenes y alturas en html, body, #__next */
 html,
 body,
 #__next {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+  @apply h-full m-0 p-0;
 }
 
-/* Fondo con gradiente difuminado */
+/* Fondo con gradiente difuminado, fijo y cubierta completa */
 body {
-  @apply bg-gradient-to-br from-[#1e3a8a] via-[#3b82f6] to-[#a5b4fc] text-white;
+  @apply bg-gradient-to-br from-[#1e3a8a] via-[#3b82f6] to-[#a5b4fc]
+         text-white
+         bg-no-repeat bg-cover bg-fixed;
 }
 
-/* Diseño principal de la aplicación */
+/* Contenedor principal de la app */
 .layout {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  @apply flex flex-col h-full;
 }
 
 /* El contenido principal toma todo el espacio disponible menos el footer */
 .content {
+  /* Ajusta la altura con calc(100vh - 4rem) para dejar espacio al footer */
+  min-height: calc(100vh - 4rem);
+  padding-bottom: 6rem; /* Espacio extra para que no tape el contenido */
   flex: 1;
-  min-height: calc(100vh - 4rem); /* Ajusta 4rem según la altura del footer */
 }
 
-/* Estilos para el footer */
+/* Footer fijo en el flujo normal, 4rem de altura */
 footer {
-  height: 4rem; /* Altura fija del footer */
-  background-color: #1a202c; /* Gris oscuro */
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+  height: 4rem;
+  @apply bg-gray-900 text-white flex items-center justify-center text-center;
 }
 
-/* Botón moderno con efecto hover */
+/* Botón moderno con efecto hover y gradiente */
 .button {
   @apply bg-gradient-to-r from-[#3b82f6] to-[#9333ea] text-white font-semibold py-2 px-6 rounded-lg shadow-lg
          transition-transform duration-300 ease-in-out transform
@@ -55,16 +50,16 @@ footer {
 
 /* Input estilizado */
 .input {
-  @apply w-full px-4 py-2 
+  @apply w-full px-4 py-2
          rounded-xl
          bg-white bg-opacity-20 backdrop-blur-sm
          text-white placeholder-gray-200
          border border-white border-opacity-20
          focus:ring-2 focus:ring-purple-400
          transition-all duration-200 ease-in-out
-         transition-colors duration-200 ease-in-out;
+         transition-colors;
 }
 
 .input:focus {
-  @apply shadow-lg; /* Agrega sombra al hacer foco */
+  @apply shadow-lg;
 }
