@@ -32,53 +32,54 @@ function Login() {
 
   return (
     <div className="layout flex items-center justify-center min-h-screen">
-      
-      <form onSubmit={handleLogin} className="card w-full max-w-md p-8 space-y-6">
-        <h1 className="text-2xl font-bold text-center">Inicio de Sesión</h1>
+      <div className="w-full max-w-md px-4">
+        <h1 className="text-6xl font-bold text-center mb-14">LabCentral</h1>
 
-        <div className="space-y-4">
-          <input
-            type="email"
-            placeholder="Correo Electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="input"
-          />
+        {/* Form con estilo .card para un efecto glassmorphism */}
+        <form onSubmit={handleLogin} className="card w-full p-8 space-y-6">
+          <h2 className="text-2xl font-bold text-center">Inicio de Sesión</h2>
 
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="input"
-          />
-        </div>
+          <div className="space-y-4">
+            <input
+              type="email"
+              placeholder="Correo Electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="input"
+            />
 
-        {/* Aplica la clase .button para el estilo de botón gradiente */}
-        <button
-          type="submit"
-          className="button w-full button-gradient"
-        >
-          Iniciar Sesión
-        </button>
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="input"
+            />
+          </div>
 
-        {/* Sección de enlaces y recordatorios */}
-        <div className="text-sm text-center">
-          <p>
-            <Link href="/reset-password" className="underline hover:text-gray-200">
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </p>
-          <p className="mt-2">
-            ¿No tienes una cuenta?{" "}
-            <Link href="/signup" className="underline hover:text-gray-200">
-              Regístrate aquí
-            </Link>
-          </p>
-        </div>
-      </form>
+          {/* Botón con gradiente */}
+          <button type="submit" className="button w-full bg-gradient-to-r from-[#3b82f6] to-[#9333ea]">
+            Iniciar Sesión
+          </button>
+
+          {/* Sección de enlaces y recordatorios */}
+          <div className="text-sm text-center">
+            <p>
+              <Link href="/reset-password" className="underline hover:text-gray-200">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </p>
+            <p className="mt-2">
+              ¿No tienes una cuenta?{" "}
+              <Link href="/signup" className="underline hover:text-gray-200">
+                Regístrate aquí
+              </Link>
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
