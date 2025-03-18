@@ -25,54 +25,57 @@ export default function Signup() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleSignup}
-        className="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-xl"
-      >
-        <h1 className="text-2xl font-bold text-center text-gray-800">Regístrate</h1>
+    <div className="layout min-h-screen">
+      <div className="content flex items-center justify-center w-full px-4 py-8">
+        {/* Form con clase .card para estilo “glassmorphism” */}
+        <form onSubmit={handleSignup} className="card w-full max-w-md p-6 space-y-6 shadow-lg">
+          <h1 className="text-2xl font-bold text-center">Regístrate</h1>
 
-        <div className="space-y-4">
-          <input
-            type="email"
-            placeholder="Correo Electrónico"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="password"
-            placeholder="Confirmar Contraseña"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+          <div className="space-y-4">
+            {/* Inputs con clase .input para estilo traslúcido */}
+            <input
+              type="email"
+              placeholder="Correo Electrónico"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="input"
+            />
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="input"
+            />
+            <input
+              type="password"
+              placeholder="Confirmar Contraseña"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="input"
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="w-full px-4 py-2 text-white bg-blue-500 rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-400"
-        >
-          Crear Cuenta
-        </button>
+          {/* Botón con la clase .button */}
+          <button
+            type="submit"
+            className="button button-gradient w-full"
+          >
+            Crear Cuenta
+          </button>
 
-        <p className="text-sm text-center text-gray-600">
-          ¿Ya tienes una cuenta?{' '}
-          <Link href="/login" className="text-blue-500 hover:underline">
-            Inicia Sesión
-          </Link>
-        </p>
-      </form>
+          {/* Enlace a Login */}
+          <p className="text-sm text-center">
+            ¿Ya tienes una cuenta?{' '}
+            <Link href="/login" className="underline hover:text-gray-200">
+              Inicia Sesión
+            </Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }
