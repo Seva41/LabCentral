@@ -21,18 +21,19 @@ function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        // Si force_password_change === true, redirigimos a la pantalla de cambio forzado
         if (data.force_password_change) {
-          // Guardamos el token en localStorage (o sessionStorage)
+          // Usuario con cambio forzado: guardamos token temporal y redirigimos
           localStorage.setItem("temp_force_token", data.token);
           alert("Debes cambiar tu contraseña ahora");
           router.push("/force-change-password");
         } else {
-          // Login normal
+          // Login normal: si es admin, guardamos el token en admin_token
+          if (data.is_admin) {
+            localStorage.setItem("admin_token", data.token);
+          }
           router.push("/dashboard");
         }
       } else {
-        // Error en login
         alert(data.error || "Login failed");
       }
     } catch (error) {
@@ -45,10 +46,8 @@ function Login() {
     <div className="layout flex items-center justify-center min-h-screen">
       <div className="w-full max-w-md px-4">
         <h1 className="text-6xl font-bold text-center mb-14">LabCentral</h1>
-
         <form onSubmit={handleLogin} className="card w-full p-8 space-y-6">
           <h2 className="text-2xl font-bold text-center">Inicio de Sesión</h2>
-
           <div className="space-y-4">
             <input
               type="email"
@@ -58,7 +57,6 @@ function Login() {
               required
               className="input"
             />
-
             <input
               type="password"
               placeholder="Contraseña"
@@ -68,20 +66,16 @@ function Login() {
               className="input"
             />
           </div>
-
           <button
             type="submit"
             className="button w-full bg-gradient-to-r from-[#3b82f6] to-[#9333ea]"
           >
             Iniciar Sesión
           </button>
-
           <div className="text-sm text-center">
-            <p>
-              <Link href="/reset-password" className="underline hover:text-gray-200">
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </p>
+            <Link href="/reset-password" className="underline hover:text-gray-200">
+              ¿Olvidaste tu contraseña?
+            </Link>
           </div>
         </form>
       </div>

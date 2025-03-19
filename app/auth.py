@@ -39,36 +39,33 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({'error': 'Invalid credentials'}), 401
 
-    # Generamos un token (puede ser más corto si force_password_change = True)
     exp_time = datetime.timedelta(hours=12)
+    payload = {
+        'user_id': user.id,
+        'is_admin': user.is_admin,
+        'exp': datetime.datetime.utcnow() + exp_time
+    }
     token = jwt.encode(
-        {
-            'user_id': user.id,
-            'exp': datetime.datetime.utcnow() + exp_time
-        },
+        payload,
         current_app.config['SECRET_KEY'],
         algorithm='HS256'
     )
 
-    # Estructura de la respuesta JSON
     if user.force_password_change:
-        # Caso: requiere cambio de password
         resp_data = {
             'message': 'Password change required',
             'force_password_change': True,
-            'token': token
+            'token': token,
+            'is_admin': user.is_admin
         }
     else:
-        # Caso: login normal
         resp_data = {
             'message': 'Login successful',
-            'token': token
+            'token': token,
+            'is_admin': user.is_admin
         }
 
-    # Construimos la respuesta
     resp = jsonify(resp_data)
-
-    # Ajusta flags de cookie si front/back están en dominios distintos
     resp.set_cookie(
         'session_token',
         token,
@@ -165,6 +162,8 @@ def get_user():
 
     return jsonify({
         'email': user.email,
+        'first_name': user.first_name,  # Ahora se envía el nombre
+        'last_name': user.last_name,    # y el apellido
         'is_admin': user.is_admin
     })
 
