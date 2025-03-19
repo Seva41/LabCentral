@@ -7,6 +7,8 @@ export default function useExerciseData(exerciseId, router) {
   const [answers, setAnswers] = useState({});
   const [myServerAnswers, setMyServerAnswers] = useState({});
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Admin: Nuevo ejercicio (si lo necesitaras) y/o crear pregunta
   const [newQuestion, setNewQuestion] = useState({
