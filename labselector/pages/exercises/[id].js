@@ -9,7 +9,7 @@ import AdminPanel from "@/components/exercises/AdminPanel";
 export default function ExerciseDetail() {
   const router = useRouter();
   const { id } = router.query;
-
+  
   // Lógica y estados provienen de custom hook
   const {
     exercise,

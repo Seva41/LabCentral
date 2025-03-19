@@ -50,7 +50,7 @@ export default function useExerciseData(exerciseId, router) {
 
     const checkUser = async () => {
       try {
-        const res = await fetch("http://localhost:5001/api/user", {
+        const res = await fetch(`${API_URL}/api/user`, {
           credentials: "include",
         });
         const data = await res.json();
@@ -67,7 +67,7 @@ export default function useExerciseData(exerciseId, router) {
 
     const fetchExerciseDetail = async () => {
       try {
-        const res = await fetch(`http://localhost:5001/api/exercise/${exerciseId}`, {
+        const res = await fetch(`${API_URL}/api/exercise/${exerciseId}`, {
           credentials: "include",
         });
         const data = await res.json();
@@ -84,7 +84,7 @@ export default function useExerciseData(exerciseId, router) {
     const fetchQuestions = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5001/api/exercise/${exerciseId}/questions`,
+          `${API_URL}/api/exercise/${exerciseId}/questions`,
           { credentials: "include" }
         );
         const data = await res.json();
@@ -101,7 +101,7 @@ export default function useExerciseData(exerciseId, router) {
     const fetchMyAnswers = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5001/api/exercise/${exerciseId}/my_answers`,
+          `${API_URL}/api/exercise/${exerciseId}/my_answers`,
           { credentials: "include" }
         );
         const data = await res.json();
@@ -135,7 +135,7 @@ export default function useExerciseData(exerciseId, router) {
   const startExercise = async () => {
     setContainerStatus("starting");
     try {
-      const response = await fetch(`http://localhost:5001/api/exercise/${exerciseId}/start`, {
+      const response = await fetch(`${API_URL}/api/exercise/${exerciseId}/start`, {
         method: "POST",
         credentials: "include",
       });
@@ -144,7 +144,7 @@ export default function useExerciseData(exerciseId, router) {
       if (response.ok) {
         if (data.proxy_url) {
           setTimeout(() => {
-            window.open(`http://localhost:5001${data.proxy_url}`, "_blank");
+            window.open(`${API_URL}${data.proxy_url}`, "_blank");
             setContainerStatus("running");
           }, 3000);
         } else {
@@ -163,7 +163,7 @@ export default function useExerciseData(exerciseId, router) {
   const stopExercise = async () => {
     setContainerStatus("stopping");
     try {
-      const response = await fetch(`http://localhost:5001/api/exercise/${exerciseId}/stop`, {
+      const response = await fetch(`${API_URL}/api/exercise/${exerciseId}/stop`, {
         method: "POST",
         credentials: "include",
       });
@@ -195,7 +195,7 @@ export default function useExerciseData(exerciseId, router) {
 
     try {
       const res = await fetch(
-        `http://localhost:5001/api/exercise/${exerciseId}/question/${questionId}/answer`,
+        `${API_URL}/api/exercise/${exerciseId}/question/${questionId}/answer`,
         {
           method: "POST",
           credentials: "include",
@@ -244,7 +244,7 @@ export default function useExerciseData(exerciseId, router) {
     };
 
     try {
-      const res = await fetch(`http://localhost:5001/api/exercise/${exerciseId}/questions`, {
+      const res = await fetch(`${API_URL}/api/exercise/${exerciseId}/questions`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -285,7 +285,7 @@ export default function useExerciseData(exerciseId, router) {
     if (!confirm("¿Estás seguro de eliminar esta pregunta?")) return;
     try {
       const res = await fetch(
-        `http://localhost:5001/api/exercise/${exerciseId}/question/${questionId}`,
+        `${API_URL}/api/exercise/${exerciseId}/question/${questionId}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -325,7 +325,7 @@ export default function useExerciseData(exerciseId, router) {
     }
     try {
       const res = await fetch(
-        `http://localhost:5001/api/exercise/${exerciseId}/question/${editingQuestionId}`,
+        `${API_URL}/api/exercise/${exerciseId}/question/${editingQuestionId}`,
         {
           method: "PATCH",
           credentials: "include",
