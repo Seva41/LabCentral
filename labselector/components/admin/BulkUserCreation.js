@@ -65,8 +65,8 @@ function BulkUserCreation() {
     <div className="card p-4">
       <h2 className="text-lg font-semibold mb-4">Creación Masiva de Usuarios (Admin)</h2>
       <p className="text-sm mb-3">
-        Ingresa los datos del usuario y presiona "Agregar Usuario a la cola". Luego, presiona "Crear Usuarios en Cola" para procesar la lista.<br/>
-        Si la creación es exitosa, se generará una contraseña temporal para cada usuario. Esta contraseña se mostrará en la lista de usuarios creados.<br/>
+        Ingresa los datos del usuario y presiona &quot;Agregar Usuario a la cola&quot;. Luego, presiona &quot;Crear Usuarios en Cola&quot; para procesar la lista.<br />
+        Si la creación es exitosa, se generará una contraseña temporal para cada usuario. Esta contraseña se mostrará en la lista de usuarios creados.<br />
         <b>ESTA ES LA ÚNICA VEZ QUE SE MUESTRA LA CONTRASEÑA TEMPORAL.</b> Asegúrate de copiarla a un lugar seguro.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
