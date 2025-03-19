@@ -7,30 +7,34 @@ services:
   webapp:
     build:
       context: .
+      dockerfile: Dockerfile
     ports:
       - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=replace-with-production-secret
     volumes:
-      - .:/app
       - ./dockerfiles:/app/dockerfiles
       - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - FLASK_ENV=development
-    privileged: true
     networks:
       - lab_app_net
+    restart: always
 
   frontend:
     build:
       context: ./labselector
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://10.80.3.10:5001
     ports:
       - "3000:3000"
-    volumes:
-      - ./labselector:/frontend
-      - /frontend/node_modules
-    command: "npm run dev"
-    working_dir: /frontend
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://10.80.3.10:5001
+    command: "npm run start"
     networks:
       - lab_app_net
+    restart: always
 
   exercise_container:
     image: kalilinux/kali-rolling
@@ -42,3 +46,4 @@ services:
     command: ["/bin/bash"]
     networks:
       - lab_app_net
+    restart: always

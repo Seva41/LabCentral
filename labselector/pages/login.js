@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 
+// Se define la URL base a partir de la variable de entorno
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

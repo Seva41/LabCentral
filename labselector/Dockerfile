@@ -1,20 +1,25 @@
-# Dockerfile (Frontend - labselector)
-FROM node:18
-
-# Crear el directorio de trabajo dentro del contenedor
-WORKDIR /frontend
-
-# Copiar archivos de configuración y dependencias
+# Etapa de construcción
+FROM node:18-alpine AS builder
+WORKDIR /app
+# Copiar los archivos de dependencias
 COPY package*.json ./
-
 # Instalar dependencias
 RUN npm install
-
 # Copiar el resto del código
 COPY . .
+# Ejecutar el build de Next.js
+RUN npm run build
 
-# Exponer el puerto donde correrá Next.js
+# Etapa de ejecución
+FROM node:18-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+# Copiar el build y archivos necesarios desde la etapa de construcción
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+# Instalar únicamente las dependencias de producción
+RUN npm install --production
 EXPOSE 3000
-
-# Comando para iniciar Next.js
-CMD ["npm", "run", "dev"]
+# Ejecutar la aplicación usando npx (que usa el binario local de next)
+CMD ["npx", "next", "start"]

@@ -18,4 +18,4 @@ EXPOSE 5001
 ENV FLASK_APP=run.py
 
 # Command to run the application
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5001"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "run:app"]

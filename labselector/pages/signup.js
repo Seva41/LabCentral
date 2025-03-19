@@ -9,6 +9,9 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const router = useRouter();
 
+  // Usar la variable de entorno para la URL base del backend
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
   const handleSignup = async (e) => {
     e.preventDefault();
     try {

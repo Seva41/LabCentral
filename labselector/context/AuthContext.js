@@ -1,6 +1,7 @@
 import { createContext, useState, useContext } from "react";
 
 const AuthContext = createContext();
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
@@ -25,7 +26,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-
   const logout = async () => {
     if (!token) {
       // Si no hay token, simplemente limpia el estado
@@ -43,10 +43,6 @@ export function AuthProvider({ children }) {
           Authorization: `Bearer ${token}`,
         },
       });
-
-      // Si quieres, luego puedes pedir ejercicios y detenerlos,
-      // o podrías hacerlo *antes* de /api/logout, según tu flujo.
-      // Por ejemplo, usando el mismo token:
       const resp = await fetch(`${API_URL}/api/user_exercises`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -71,7 +67,6 @@ export function AuthProvider({ children }) {
     setToken(null);
     setIsAdmin(false);
   };
-  
 
   return (
     <AuthContext.Provider value={{ token, isAdmin, login, logout }}>

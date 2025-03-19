@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+// Se define la URL base a partir de la variable de entorno
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 function ExerciseManager({ exercise, token }) {
   const [exerciseUrl, setExerciseUrl] = useState(null);
   const [loading, setLoading] = useState(false);

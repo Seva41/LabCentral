@@ -6,10 +6,12 @@ import ExerciseHeader from "@/components/exercises/ExerciseHeader";
 import ExerciseQuestions from "@/components/exercises/ExerciseQuestions";
 import AdminPanel from "@/components/exercises/AdminPanel";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function ExerciseDetail() {
   const router = useRouter();
   const { id } = router.query;
-
+  
   // Lógica y estados provienen de custom hook
   const {
     exercise,

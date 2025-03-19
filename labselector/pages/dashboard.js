@@ -3,6 +3,9 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { FaSun, FaMoon } from "react-icons/fa";
 
+// Definimos la URL base del backend a partir de la variable de entorno
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 function Dashboard() {
   const router = useRouter();
   const [exercises, setExercises] = useState([]);
@@ -89,7 +92,6 @@ function Dashboard() {
     const formData = new FormData();
     formData.append("title", newExercise.title);
     formData.append("description", newExercise.description);
-    // Ya no se envía el "port"
     formData.append("zipfile", exerciseZip);
 
     try {
