@@ -7,7 +7,7 @@ export default function Footer() {
         <span>
           LabCentral © 2025 - Desarrollado por{' '}
           <a
-            href="https://github.com/Seva41"
+            href="https://sebadinator.com/"
             target="_blank"
             rel="noopener noreferrer"
             className="underline text-blue-200 hover:text-blue-100"

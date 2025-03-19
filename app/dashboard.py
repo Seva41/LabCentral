@@ -1,12 +1,13 @@
-# app/dashboard.py
-
 from flask import Blueprint, jsonify
 
 dashboard = Blueprint('dashboard', __name__)
 
 @dashboard.route('/api/dashboard', methods=['GET'])
 def get_dashboard_info():
-    # Return JSON data instead of rendering HTML
+    """
+    Endpoint de ejemplo: retorna un JSON con información
+    (en lugar de renderizar HTML).
+    """
     data = {
         "welcomeMessage": "Hello from Flask!",
         "labs": [

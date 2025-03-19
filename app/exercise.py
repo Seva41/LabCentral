@@ -13,7 +13,8 @@ client = docker.from_env()
 
 def decode_token():
     """
-    Lee el JWT desde la cookie 'session_token'
+    Lee el JWT desde la cookie 'session_token'.
+    Si la cookie no está o el token es inválido/expirado, retorna None.
     """
     token = request.cookies.get('session_token', '')
     if not token:
@@ -36,7 +37,6 @@ def get_free_port():
         if candidate not in used_ports:
             return candidate
 
-    # Si no encontró ningún puerto, se lanza excepción
     raise RuntimeError("No free ports available in the specified range")
 
 def get_used_ports_by_containers():
@@ -48,7 +48,6 @@ def get_used_ports_by_containers():
     for container in client.containers.list():
         ports_info = container.attrs["NetworkSettings"]["Ports"] or {}
         for port_spec, host_data in ports_info.items():
-            # host_data podría ser como [{'HostIp': '0.0.0.0', 'HostPort': '8000'}]
             if host_data:
                 for binding in host_data:
                     if binding.get("HostPort"):
@@ -192,7 +191,6 @@ def stop_exercise(exercise_id):
 def add_exercise():
     """
     Crea un ejercicio sin ZIP (por JSON), recibiendo port directamente.
-    Se deja tal cual, aunque en la subida con ZIP ya no pedimos puerto.
     """
     decoded = decode_token()
     if not decoded:
@@ -232,7 +230,6 @@ def delete_exercise(exercise_id):
         return jsonify({'error': 'Exercise not found'}), 404
 
     # 1. Detener y eliminar cualquier contenedor asociado a este ejercicio
-    #    que contenga "exercise-<exercise_id>" en su nombre
     containers = client.containers.list(all=True, filters={"name": f"exercise-{exercise_id}"})
     for c in containers:
         try:
@@ -290,7 +287,6 @@ def add_exercise_with_zip():
     port = get_free_port()
 
     # 3. Crear slug a partir del título
-    import re
     slug = re.sub(r'[^A-Za-z0-9]+', '_', title.lower()).strip('_')
     if not slug:
         slug = "exercise"

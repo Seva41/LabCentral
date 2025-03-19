@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 
-// Se define la URL base a partir de la variable de entorno
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function Login() {
@@ -17,14 +16,23 @@ function Login() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include",
+        credentials: "include", // para que envíe/reciba la cookie
       });
       const data = await response.json();
 
       if (response.ok) {
-        console.log("Login exitoso, redirigiendo a /dashboard...");
-        router.push("/dashboard");
+        // Si force_password_change === true, redirigimos a la pantalla de cambio forzado
+        if (data.force_password_change) {
+          // Guardamos el token en localStorage (o sessionStorage)
+          localStorage.setItem("temp_force_token", data.token);
+          alert("Debes cambiar tu contraseña ahora");
+          router.push("/force-change-password");
+        } else {
+          // Login normal
+          router.push("/dashboard");
+        }
       } else {
+        // Error en login
         alert(data.error || "Login failed");
       }
     } catch (error) {
@@ -38,7 +46,6 @@ function Login() {
       <div className="w-full max-w-md px-4">
         <h1 className="text-6xl font-bold text-center mb-14">LabCentral</h1>
 
-        {/* Form con estilo .card para un efecto glassmorphism */}
         <form onSubmit={handleLogin} className="card w-full p-8 space-y-6">
           <h2 className="text-2xl font-bold text-center">Inicio de Sesión</h2>
 
@@ -62,12 +69,13 @@ function Login() {
             />
           </div>
 
-          {/* Botón con gradiente */}
-          <button type="submit" className="button w-full bg-gradient-to-r from-[#3b82f6] to-[#9333ea]">
+          <button
+            type="submit"
+            className="button w-full bg-gradient-to-r from-[#3b82f6] to-[#9333ea]"
+          >
             Iniciar Sesión
           </button>
 
-          {/* Sección de enlaces y recordatorios */}
           <div className="text-sm text-center">
             <p>
               <Link href="/reset-password" className="underline hover:text-gray-200">
