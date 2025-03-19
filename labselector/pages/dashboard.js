@@ -160,16 +160,20 @@ function Dashboard() {
 
   return (
     <div
-      className={`${
-        darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"
-      } min-h-screen`}
+      className={`layout min-h-screen ${
+        darkMode
+          ? "bg-gray-900 text-gray-100"
+          : "bg-gradient-to-br from-[#1e3a8a] via-[#3b82f6] to-[#a5b4fc] text-white"
+      }`}
     >
-      <div className="container mx-auto p-4">
+      <div className="content container mx-auto p-4">
         {/* Encabezado */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Dashboard</h1>
+          
+          {/* Toggle de tema oscuro + Logout */}
           <div className="flex items-center space-x-4">
-            {/* Toggle de tema oscuro */}
+            {/* Switch Dark Mode */}
             <div className="flex items-center">
               <FaSun
                 className={`text-gray-600 dark:text-gray-300 ${
@@ -192,19 +196,26 @@ function Dashboard() {
                 }`}
               />
             </div>
-            {/* Botón Logout */}
+  
+            {/* Botón Logout: rojo más oscuro */}
             <button
               onClick={handleLogout}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              className="
+                px-4 py-2 rounded text-white
+                bg-red-700 hover:bg-red-800
+                transition-transform duration-300 ease-in-out transform
+                hover:scale-105 hover:shadow-xl
+                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600
+              "
             >
               Logout
             </button>
           </div>
         </div>
-
+  
         {/* Panel de Admin */}
         {isAdmin && (
-          <div className="mb-6 p-4 bg-gray-200 dark:bg-gray-800 border rounded-lg">
+          <div className="card mb-6">
             <h2 className="text-lg font-semibold mb-4">Admin Panel</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
@@ -214,7 +225,7 @@ function Dashboard() {
                 onChange={(e) =>
                   setNewExercise({ ...newExercise, title: e.target.value })
                 }
-                className="p-2 border rounded"
+                className="input"
               />
               <input
                 type="text"
@@ -226,9 +237,8 @@ function Dashboard() {
                     description: e.target.value,
                   })
                 }
-                className="p-2 border rounded"
+                className="input"
               />
-              {/* Subir ZIP */}
               <input
                 type="file"
                 accept=".zip"
@@ -239,40 +249,54 @@ function Dashboard() {
                     setExerciseZip(null);
                   }
                 }}
-                className="p-2 border rounded"
+                className="input"
               />
             </div>
             <button
               onClick={addExerciseWithZip}
-              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              className="button button-gradient"
             >
               Add Exercise (ZIP)
             </button>
           </div>
         )}
-
+  
         {/* Lista de ejercicios */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {exercises.map((exercise) => (
             <div
               key={exercise.id}
-              className="border rounded-lg p-4 shadow-md hover:shadow-lg transition-shadow bg-white dark:bg-gray-800"
+              className="card shadow-md hover:shadow-xl transition-shadow mb-4"
             >
               <h2 className="text-lg font-semibold mb-2">{exercise.title}</h2>
               <p className="text-sm mb-4">{exercise.description}</p>
-
-              {/* Botón que lleva al detalle del ejercicio */}
+              
+              {/* Botón morado más oscuro (sin degradado) */}
               <Link href={`/exercises/${exercise.id}`}>
-                <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                <button
+                  className="
+                    px-4 py-2 rounded text-white
+                    bg-purple-700 hover:bg-purple-800
+                    transition-transform duration-300 ease-in-out transform
+                    hover:scale-105 hover:shadow-xl
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600
+                  "
+                >
                   Ver detalle
                 </button>
               </Link>
-
-              {/* Botón Delete (solo admin) */}
+  
+              {/* Botón Delete (solo admin) con nuevo rojo oscuro */}
               {isAdmin && (
                 <button
                   onClick={() => deleteExercise(exercise.id)}
-                  className="ml-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                  className="
+                    ml-2 px-4 py-2 rounded text-white
+                    bg-red-700 hover:bg-red-800
+                    transition-transform duration-300 ease-in-out transform
+                    hover:scale-105 hover:shadow-xl
+                    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-600
+                  "
                 >
                   Delete
                 </button>
@@ -282,7 +306,7 @@ function Dashboard() {
         </div>
       </div>
     </div>
-  );
+  );  
 }
 
 export default Dashboard;

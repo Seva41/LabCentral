@@ -35,15 +35,14 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      // Llamamos primero a /api/logout para que el backend realice la lógica necesaria
+      // Llamas primero a /api/logout para que el backend
+      // remueva contenedores y haga la lógica necesaria
       await fetch(`${API_URL}/api/logout`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
-      // Luego, pedimos los ejercicios y detenemos aquellos no completados
       const resp = await fetch(`${API_URL}/api/user_exercises`, {
         headers: { Authorization: `Bearer ${token}` },
       });
