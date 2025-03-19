@@ -1,3 +1,8 @@
+networks:
+  lab_app_net:
+    name: lab_app_net
+    driver: bridge
+services:
   webapp:
     build:
       context: .
