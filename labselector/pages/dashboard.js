@@ -33,7 +33,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("http://localhost:5001/api/user", {
+        const res = await fetch(`${API_URL}/api/user`, {
           credentials: "include",
         });
         const data = await res.json();
@@ -54,7 +54,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchExercises = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/exercises", {
+        const response = await fetch(`${API_URL}/api/exercises`, {
           credentials: "include",
         });
         const data = await response.json();
@@ -93,7 +93,7 @@ function Dashboard() {
     formData.append("zipfile", exerciseZip);
 
     try {
-      const response = await fetch("http://localhost:5001/api/exercise_with_zip", {
+      const response = await fetch(`${API_URL}/api/exercise_with_zip`, {
         method: "POST",
         credentials: "include",
         body: formData,
@@ -102,7 +102,7 @@ function Dashboard() {
       if (response.ok) {
         alert("Exercise added successfully");
         // Recargar ejercicios
-        const updatedRes = await fetch("http://localhost:5001/api/exercises", {
+        const updatedRes = await fetch(`${API_URL}/api/exercises`, {
           credentials: "include",
         });
         const updatedExercises = await updatedRes.json();
@@ -123,7 +123,7 @@ function Dashboard() {
   const deleteExercise = async (exerciseId) => {
     try {
       const response = await fetch(
-        `http://localhost:5001/api/exercise/${exerciseId}`,
+        `${API_URL}/api/exercise/${exerciseId}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -142,7 +142,7 @@ function Dashboard() {
   // Logout
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:5001/api/logout", {
+      const response = await fetch(`${API_URL}/api/logout`, {
         method: "POST",
         credentials: "include",
       });

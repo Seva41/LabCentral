@@ -10,7 +10,7 @@ export function AuthProvider({ children }) {
     setToken(newToken);
 
     try {
-      const response = await fetch("http://localhost:5001/api/user", {
+      const response = await fetch(`${API_URL}/api/user`, {
         headers: { Authorization: `Bearer ${newToken}` },
       });
 
@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
     try {
       // Llamas primero a /api/logout para que el backend
       // remueva contenedores y haga la lógica necesaria
-      await fetch("http://localhost:5001/api/logout", {
+      await fetch(`${API_URL}/api/logout`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -47,7 +47,7 @@ export function AuthProvider({ children }) {
       // Si quieres, luego puedes pedir ejercicios y detenerlos,
       // o podrías hacerlo *antes* de /api/logout, según tu flujo.
       // Por ejemplo, usando el mismo token:
-      const resp = await fetch("http://localhost:5001/api/user_exercises", {
+      const resp = await fetch(`${API_URL}/api/user_exercises`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (resp.ok) {
@@ -55,7 +55,7 @@ export function AuthProvider({ children }) {
         if (Array.isArray(exercises)) {
           for (const ex of exercises) {
             if (!ex.completed) {
-              await fetch(`http://localhost:5001/api/exercise/${ex.id}/stop`, {
+              await fetch(`${API_URL}/api/exercise/${ex.id}/stop`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${token}` },
               });
