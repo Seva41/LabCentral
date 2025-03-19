@@ -23,6 +23,8 @@ services:
       context: ./labselector
     ports:
       - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5001
     volumes:
       - ./labselector:/frontend
       - /frontend/node_modules
