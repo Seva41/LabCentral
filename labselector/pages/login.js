@@ -82,12 +82,6 @@ function Login() {
                 ¿Olvidaste tu contraseña?
               </Link>
             </p>
-            <p className="mt-2">
-              ¿No tienes una cuenta?{" "}
-              <Link href="/signup" className="underline hover:text-gray-200">
-                Regístrate aquí
-              </Link>
-            </p>
           </div>
         </form>
       </div>

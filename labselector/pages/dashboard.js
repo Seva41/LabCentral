@@ -3,7 +3,6 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { FaSun, FaMoon } from "react-icons/fa";
 
-// Definimos la URL base del backend a partir de la variable de entorno
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 function Dashboard() {
@@ -19,6 +18,10 @@ function Dashboard() {
   });
   // Archivo ZIP
   const [exerciseZip, setExerciseZip] = useState(null);
+
+  // Campos para generar un token de reset de contraseña
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetTokenGenerated, setResetTokenGenerated] = useState("");
 
   // Al montar, cargar preferencia de dark mode desde localStorage
   useEffect(() => {
@@ -158,6 +161,28 @@ function Dashboard() {
     }
   };
 
+  // Generar token de reseteo de contraseña (solo admin)
+  const handleResetToken = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/request_password_reset`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const data = await response.json();
+      if (data.reset_token) {
+        setResetTokenGenerated(data.reset_token);
+      } else {
+        setResetTokenGenerated("");
+        alert("No se pudo generar un token (el usuario no existe o error desconocido).");
+      }
+    } catch (error) {
+      console.error("Error generando token de reseteo:", error);
+      alert("Error generando token");
+    }
+  };
+
   return (
     <div
       className={`layout min-h-screen ${
@@ -215,54 +240,89 @@ function Dashboard() {
   
         {/* Panel de Admin */}
         {isAdmin && (
-          <div className="card mb-6">
-            <h2 className="text-lg font-semibold mb-4">Admin Panel</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Exercise Title"
-                value={newExercise.title}
-                onChange={(e) =>
-                  setNewExercise({ ...newExercise, title: e.target.value })
-                }
-                className="input"
-              />
-              <input
-                type="text"
-                placeholder="Description"
-                value={newExercise.description}
-                onChange={(e) =>
-                  setNewExercise({
-                    ...newExercise,
-                    description: e.target.value,
-                  })
-                }
-                className="input"
-              />
-              <input
-                type="file"
-                accept=".zip"
-                onChange={(e) => {
-                  if (e.target.files.length > 0) {
-                    setExerciseZip(e.target.files[0]);
-                  } else {
-                    setExerciseZip(null);
+          <div className="space-y-6">
+            {/* Sección para subir ejercicio con ZIP */}
+            <div className="card mb-6 p-4">
+              <h2 className="text-lg font-semibold mb-4">Agregar Ejercicio (Admin)</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <input
+                  type="text"
+                  placeholder="Exercise Title"
+                  value={newExercise.title}
+                  onChange={(e) =>
+                    setNewExercise({ ...newExercise, title: e.target.value })
                   }
-                }}
-                className="input"
-              />
+                  className="input"
+                />
+                <input
+                  type="text"
+                  placeholder="Description"
+                  value={newExercise.description}
+                  onChange={(e) =>
+                    setNewExercise({
+                      ...newExercise,
+                      description: e.target.value,
+                    })
+                  }
+                  className="input"
+                />
+                <input
+                  type="file"
+                  accept=".zip"
+                  onChange={(e) => {
+                    if (e.target.files.length > 0) {
+                      setExerciseZip(e.target.files[0]);
+                    } else {
+                      setExerciseZip(null);
+                    }
+                  }}
+                  className="input"
+                />
+              </div>
+              <button
+                onClick={addExerciseWithZip}
+                className="button button-gradient"
+              >
+                Add Exercise (ZIP)
+              </button>
             </div>
-            <button
-              onClick={addExerciseWithZip}
-              className="button button-gradient"
-            >
-              Add Exercise (ZIP)
-            </button>
+
+            {/* Sección para generar token de reseteo de contraseña */}
+            <div className="card p-4">
+              <h2 className="text-lg font-semibold mb-4">Reset de Contraseña (Admin)</h2>
+              <p className="text-sm mb-3">
+                Ingresa el correo del usuario. Si existe, se generará un token de reseteo para que ese usuario pueda cambiar su contraseña en <strong>/reset-password</strong>.
+              </p>
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-2 sm:gap-4">
+                <input
+                  type="email"
+                  placeholder="Correo del usuario"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className="input"
+                />
+                <button
+                  onClick={handleResetToken}
+                  className="button button-gradient"
+                >
+                  Generar Token
+                </button>
+              </div>
+              {resetTokenGenerated && (
+                <div className="mt-4 break-words">
+                  <strong>Token generado:</strong> {resetTokenGenerated}
+                  <br />
+                  <span className="text-xs">
+                    Entrégaselo al usuario para que lo use en <b>/reset-password</b>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         )}
   
         {/* Lista de ejercicios */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {exercises.map((exercise) => (
             <div
               key={exercise.id}
@@ -271,7 +331,6 @@ function Dashboard() {
               <h2 className="text-lg font-semibold mb-2">{exercise.title}</h2>
               <p className="text-sm mb-4">{exercise.description}</p>
               
-              {/* Botón morado más oscuro (sin degradado) */}
               <Link href={`/exercises/${exercise.id}`}>
                 <button
                   className="
@@ -286,7 +345,6 @@ function Dashboard() {
                 </button>
               </Link>
   
-              {/* Botón Delete (solo admin) con nuevo rojo oscuro */}
               {isAdmin && (
                 <button
                   onClick={() => deleteExercise(exercise.id)}
@@ -306,7 +364,7 @@ function Dashboard() {
         </div>
       </div>
     </div>
-  );  
+  );
 }
 
 export default Dashboard;
