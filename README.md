@@ -184,19 +184,33 @@ Cuando el proceso termine, deberá ver en la consola mensajes indicando que el b
 ## Migración de la Base de Datos
 Cuando realice cambios en los modelos y necesite actualizar el esquema de la base de datos, use Flask-Migrate. Ejecute los siguientes comandos desde el contenedor del backend o en su entorno virtual:
 
-  1. Inicializar el directorio de migraciones (solo la primera vez):
+  1. Instalar dependencias:
   ```bash
+  pip install -r requirements.txt --break-system-packages
+  ```
+  2. Desde la carpeta raíz, inicializar el directorio de migraciones (solo la primera vez):
+  ```bash
+  export FLASK_APP=app
   flask db init
   ```
-  2. Generar una nueva migración (detecta los cambios en los modelos):
+  3. Cerciorarse de tener los permisos de escritura necesarios:
+  ```bash
+  sudo chown <USUARIO>:<USUARIO> instance/app.db
+  sudo chmod 664 instance/app.db
+  sudo chown <USUARIO>:<USUARIO> instance
+  sudo chmod 775 instance
+  ```
+  Reemplaza `<USUARIO>` con el nombre de usuario del sistema.
+  
+  3. Generar una nueva migración (detecta los cambios en los modelos):
   ```bash
   flask db migrate -m "Descripción de los cambios"
   ```
-  3. Aplicar las migraciones a la base de datos:
+  4. Aplicar las migraciones a la base de datos:
   ```bash
   flask db upgrade
   ```
-  4. (Opcional) Para revertir una migración:
+  5. (Opcional) Para revertir una migración:
   ```bash
   flask db downgrade
   ```
