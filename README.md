@@ -13,6 +13,7 @@
     - [4. Acceder a la Aplicación](#4-acceder-a-la-aplicación)
     - [5. Verificación de Servicios](#5-verificación-de-servicios)
   - [Detección de Errores Comunes](#detección-de-errores-comunes)
+  - [Migración de la Base de Datos](#migración-de-la-base-de-datos)
   - [Uso de la Aplicación](#uso-de-la-aplicación)
   - [Creación de un Usuario de Prueba](#creación-de-un-usuario-de-prueba)
   - [Ejecución de Ejercicios con Docker](#ejecución-de-ejercicios-con-docker)
@@ -180,6 +181,25 @@ Cuando el proceso termine, deberá ver en la consola mensajes indicando que el b
   pip install -r requirements.txt --break-system-packages
   ```
 
+## Migración de la Base de Datos
+Cuando realice cambios en los modelos y necesite actualizar el esquema de la base de datos, use Flask-Migrate. Ejecute los siguientes comandos desde el contenedor del backend o en su entorno virtual:
+
+  1. Inicializar el directorio de migraciones (solo la primera vez):
+  ```bash
+  flask db init
+  ```
+  2. Generar una nueva migración (detecta los cambios en los modelos):
+  ```bash
+  flask db migrate -m "Descripción de los cambios"
+  ```
+  3. Aplicar las migraciones a la base de datos:
+  ```bash
+  flask db upgrade
+  ```
+  4. (Opcional) Para revertir una migración:
+  ```bash
+  flask db downgrade
+  ```
 ## Uso de la Aplicación
 
 1. **Iniciar Sesión**: Use las credenciales registradas para acceder.
