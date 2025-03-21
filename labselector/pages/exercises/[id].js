@@ -113,16 +113,19 @@ export default function ExerciseDetail() {
           {myGroup?.group_id ? (
             <div className="p-4 bg-green-100 text-green-900 rounded shadow">
               <h2 className="text-xl font-bold">Ya formas parte de un grupo</h2>
-              <p><strong>Líder:</strong> {myGroup.leader.email}</p>
-              <p><strong>Compañero:</strong> {myGroup.partner.email}</p>
+              <p>
+                <strong>Líder:</strong> {myGroup.leader.email}
+              </p>
+              <p>
+                <strong>Compañero:</strong> {myGroup.partner.email}
+              </p>
             </div>
-          ) : (
-            <Link href={`/exercises/${id}/group`}>
-              <button className="button button-gradient">
-                Formar Grupo
-              </button>
-            </Link>
-          )}
+          ) : null}
+          <Link href={`/exercises/${id}/group`}>
+            <button className="button button-gradient mt-2">
+              {myGroup?.group_id ? "Ver o Cambiar Grupo" : "Formar Grupo"}
+            </button>
+          </Link>
         </div>
 
         {isAdmin && (

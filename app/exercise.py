@@ -184,10 +184,6 @@ def stop_exercise(exercise_id):
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>/group', methods=['POST'])
 def create_exercise_group(exercise_id):
-    """
-    Permite a un alumno (líder) elegir a otro alumno para realizar el ejercicio en conjunto,
-    usando partner_email en lugar de partner_id.
-    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -201,11 +197,9 @@ def create_exercise_group(exercise_id):
     if not partner:
         return jsonify({'error': 'No se encontró un usuario con ese email'}), 404
 
-    # Impedir que el usuario se elija a sí mismo
     if partner.id == user_id:
         return jsonify({'error': 'No puedes ser tu propio compañero'}), 400
 
-    # Verificar que ninguno de los dos ya esté en un grupo para este ejercicio
     existing_group = ExerciseGroup.query.filter(
         ExerciseGroup.exercise_id == exercise_id,
         ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
@@ -216,7 +210,22 @@ def create_exercise_group(exercise_id):
     new_group = ExerciseGroup(exercise_id=exercise_id, leader_id=user_id, partner_id=partner.id)
     db.session.add(new_group)
     db.session.commit()
-    return jsonify({'message': 'Grupo creado exitosamente', 'group_id': new_group.id}), 201
+
+    leader = User.query.get(new_group.leader_id)
+    partner = User.query.get(new_group.partner_id)
+    return jsonify({
+        'message': 'Grupo creado exitosamente',
+        'group_id': new_group.id,
+        'exercise_id': new_group.exercise_id,
+        'leader': {
+            'id': leader.id,
+            'email': leader.email
+        },
+        'partner': {
+            'id': partner.id,
+            'email': partner.email
+        }
+    }), 201
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>/my_group', methods=['GET'])
 def get_my_group(exercise_id):
@@ -281,6 +290,32 @@ def submit_group_answer(exercise_id):
         return jsonify({'message': 'Respuesta enviada a nivel grupal'}), 200
     else:
         return jsonify({'error': 'No estás en un grupo para este ejercicio'}), 400
+
+@exercise_blueprint.route('/api/exercise/<int:exercise_id>/group', methods=['DELETE'])
+def dissolve_group(exercise_id):
+    decoded = decode_token()
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user_id = decoded['user_id']
+
+    # Busca el grupo donde el usuario es líder o compañero
+    group = ExerciseGroup.query.filter(
+        ExerciseGroup.exercise_id == exercise_id,
+        ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
+    ).first()
+
+    if not group:
+        return jsonify({'error': 'No perteneces a ningún grupo para este ejercicio'}), 404
+
+    # Borra respuestas del grupo si existiesen
+    GroupExerciseAnswer.query.filter_by(group_id=group.id).delete()
+
+    # Finalmente, elimina el grupo
+    db.session.delete(group)
+    db.session.commit()
+
+    return jsonify({'message': 'Grupo disuelto correctamente'}), 200
 
 # --- Rutas de admin existentes ---
 

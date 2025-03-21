@@ -257,3 +257,18 @@ def force_change_password():
     db.session.commit()
 
     return jsonify({'message': 'Password updated successfully'})
+
+
+@auth_blueprint.route('/api/users', methods=['GET'])
+def get_users():
+    decoded = decode_token()
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+    users = User.query.all()
+    result = [{
+        'id': user.id,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name
+    } for user in users]
+    return jsonify(result), 200

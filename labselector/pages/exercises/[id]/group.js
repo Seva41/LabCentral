@@ -17,18 +17,20 @@ export default function GroupExercisePage() {
     if (!id) return;
 
     const fetchGroup = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/exercise/${id}/my_group`, {
-          credentials: "include",
-        });
-        const data = await res.json();
-        if (res.ok && data.group_id) {
-          setExistingGroup(data);
+        try {
+          const res = await fetch(`${API_URL}/api/exercise/${id}/my_group`, {
+            credentials: "include",
+          });
+          const data = await res.json();
+          if (res.ok && data.group_id) {
+            setExistingGroup(data);
+          } else {
+            setExistingGroup(null);
+          }
+        } catch (error) {
+          console.error("Error fetching group info:", error);
         }
-      } catch (error) {
-        console.error("Error fetching group info:", error);
-      }
-    };
+      };
 
     const fetchUsers = async () => {
       try {
@@ -66,9 +68,27 @@ export default function GroupExercisePage() {
       const data = await res.json();
       if (res.ok) {
         setMessage(data.message);
-        setExistingGroup({ group_id: data.group_id });
+        setExistingGroup(data);
       } else {
         setMessage(data.error || "Error al crear el grupo.");
+      }
+    } catch (error) {
+      setMessage("Error al conectar con el servidor.");
+    }
+  };
+
+  const handleDisbandGroup = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/exercise/${id}/group`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setExistingGroup(null);
+        setMessage(data.message);
+      } else {
+        setMessage(data.error || "Error al disolver el grupo.");
       }
     } catch (error) {
       setMessage("Error al conectar con el servidor.");
@@ -86,14 +106,25 @@ export default function GroupExercisePage() {
           {existingGroup ? (
             <div className="p-4 bg-green-100 text-green-900 rounded shadow">
               <h2 className="text-xl font-bold">Ya formas parte de un grupo</h2>
-              <p>Revisa la información en la página del ejercicio.</p>
-              <p className="mt-2">
+              <p><strong>Líder:</strong> {existingGroup.leader.email}</p>
+              <p><strong>Compañero:</strong> {existingGroup.partner.email}</p>
+
+              <button
+                onClick={handleDisbandGroup}
+                className="button button-gradient mt-4"
+              >
+                Disolver Grupo
+              </button>
+
+              {message && <p className="mt-4">{message}</p>}
+
+              <div className="mt-4">
                 <Link href={`/exercises/${id}`}>
                   <span className="button bg-gray-500 hover:bg-gray-600 cursor-pointer">
                     Volver al Ejercicio
                   </span>
                 </Link>
-              </p>
+              </div>
             </div>
           ) : (
             <>
@@ -119,17 +150,18 @@ export default function GroupExercisePage() {
                   Crear Grupo
                 </button>
               </form>
+
               {message && <p className="mt-4">{message}</p>}
+
+              <div className="mt-4">
+                <Link href={`/exercises/${id}`}>
+                  <span className="button bg-gray-500 hover:bg-gray-600 cursor-pointer">
+                    Volver
+                  </span>
+                </Link>
+              </div>
             </>
           )}
-
-          <div className="mt-4">
-            <Link href={`/exercises/${id}`}>
-              <span className="button bg-gray-500 hover:bg-gray-600 cursor-pointer">
-                Volver
-              </span>
-            </Link>
-          </div>
         </div>
       </div>
     </div>
