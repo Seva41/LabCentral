@@ -73,7 +73,7 @@ export default function GroupExercisePage() {
         setMessage(data.error || "Error al crear el grupo.");
       }
     } catch (error) {
-      setMessage("Error al conectar con el servidor.");
+      setMessage(`Error al conectar con el servidor: ${error.message}`);
     }
   };
 
@@ -91,7 +91,7 @@ export default function GroupExercisePage() {
         setMessage(data.error || "Error al disolver el grupo.");
       }
     } catch (error) {
-      setMessage("Error al conectar con el servidor.");
+      setMessage(`Error al conectar con el servidor: ${error.message}`);
     }
   };
 
