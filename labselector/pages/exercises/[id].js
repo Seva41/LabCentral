@@ -1,16 +1,20 @@
 import { useRouter } from "next/router";
 import { FaSun, FaMoon } from "react-icons/fa";
+import Link from "next/link";
+import { useState, useEffect } from "react";
 import useExerciseData from "@/hooks/useExerciseData";
 
 import ExerciseHeader from "@/components/exercises/ExerciseHeader";
 import ExerciseQuestions from "@/components/exercises/ExerciseQuestions";
 import AdminPanel from "@/components/exercises/AdminPanel";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function ExerciseDetail() {
   const router = useRouter();
   const { id } = router.query;
   
-  // Lógica y estados provienen de custom hook
+  // Estados y lógica del custom hook
   const {
     exercise,
     questions,
@@ -29,19 +33,38 @@ export default function ExerciseDetail() {
     createQuestion,
     deleteQuestion,
     totalScore,
-
     editingQuestionId,
     editQuestionData,
     startEditingQuestion,
     cancelEditing,
     saveEditedQuestion,
-
     darkMode,
     toggleDarkMode,
     goBackToDashboard,
   } = useExerciseData(id, router);
 
-  // Si todavía no cargó el ejercicio, mostramos mensaje
+  // Estado para almacenar la info del grupo del usuario
+  const [myGroup, setMyGroup] = useState(null);
+
+  useEffect(() => {
+    if (!id) return;
+    // Consultar el grupo del usuario para este ejercicio
+    const fetchGroup = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/exercise/${id}/my_group`, {
+          credentials: 'include',
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setMyGroup(data);
+        }
+      } catch (error) {
+        console.error("Error al obtener grupo:", error);
+      }
+    };
+    fetchGroup();
+  }, [id]);
+
   if (!exercise) {
     return (
       <div className="p-4">
@@ -51,19 +74,12 @@ export default function ExerciseDetail() {
   }
 
   return (
-    // Usamos un contenedor principal con min-h-screen.
     <div className={`layout min-h-screen ${darkMode ? "bg-gray-900 text-gray-100" : ""}`}>
-      
-      {/* Barra superior: botón volver + toggle dark mode */}
+      {/* Barra superior */}
       <div className="p-4 flex justify-between items-center">
-        <button
-          onClick={goBackToDashboard}
-          className="button button-gradient"
-        >
+        <button onClick={goBackToDashboard} className="button button-gradient">
           &larr; Volver al Dashboard
         </button>
-
-        {/* Toggle dark mode */}
         <div className="flex items-center">
           <FaSun className={`mx-1 ${darkMode ? "opacity-50" : "opacity-100"}`} />
           <label className="relative inline-block w-10 h-6 mx-2">
@@ -80,10 +96,8 @@ export default function ExerciseDetail() {
         </div>
       </div>
 
-      {/* Contenido principal centrado y con espaciado */}
+      {/* Contenido principal */}
       <div className="content w-full max-w-7xl mx-auto px-4 pb-24 space-y-6">
-        
-        {/* 1. Cabecera (título, desc, botones Start/Stop) */}
         <ExerciseHeader
           exercise={exercise}
           containerStatus={containerStatus}
@@ -94,7 +108,23 @@ export default function ExerciseDetail() {
           goBackToDashboard={goBackToDashboard}
         />
 
-        {/* 2. Panel para crear preguntas (sólo si eres admin) */}
+        {/* Sección de grupo */}
+        <div className="mt-4">
+          {myGroup?.group_id ? (
+            <div className="p-4 bg-green-100 text-green-900 rounded shadow">
+              <h2 className="text-xl font-bold">Ya formas parte de un grupo</h2>
+              <p><strong>Líder:</strong> {myGroup.leader.email}</p>
+              <p><strong>Compañero:</strong> {myGroup.partner.email}</p>
+            </div>
+          ) : (
+            <Link href={`/exercises/${id}/group`}>
+              <button className="button button-gradient">
+                Formar Grupo
+              </button>
+            </Link>
+          )}
+        </div>
+
         {isAdmin && (
           <div className="max-w-3xl mx-auto">
             <AdminPanel
@@ -107,7 +137,6 @@ export default function ExerciseDetail() {
           </div>
         )}
 
-        {/* 3. Sección de preguntas (ancho distinto si prefieres) */}
         <div className="max-w-4xl mx-auto">
           <ExerciseQuestions
             questions={questions}
@@ -125,7 +154,6 @@ export default function ExerciseDetail() {
             totalScore={totalScore}
           />
         </div>
-
       </div>
     </div>
   );
