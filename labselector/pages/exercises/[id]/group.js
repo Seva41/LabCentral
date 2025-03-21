@@ -15,30 +15,30 @@ export default function GroupExercisePage() {
 
   useEffect(() => {
     if (!id) return;
-
+  
     const fetchGroup = async () => {
-        try {
-          const res = await fetch(`${API_URL}/api/exercise/${id}/my_group`, {
-            credentials: "include",
-          });
-          const data = await res.json();
-          if (res.ok && data.group_id) {
-            setExistingGroup(data);
-          } else {
-            setExistingGroup(null);
-          }
-        } catch (error) {
-          console.error("Error fetching group info:", error);
-        }
-      };
-
-    const fetchUsers = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/users`, {
+        const res = await fetch(`${API_URL}/api/exercise/${id}/my_group`, {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (res.ok && data.group_id) {
+          setExistingGroup(data);
+        } else {
+          setExistingGroup(null);
+        }
+      } catch (error) {
+        console.error("Error fetching group info:", error);
+      }
+    };
+  
+    const fetchAvailableUsers = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/exercise/${id}/available_users`, {
           credentials: "include",
         });
         if (!res.ok) {
-          console.error("Error fetching users:", res.status);
+          console.error("Error fetching available users:", res.status);
           return;
         }
         const data = await res.json();
@@ -47,11 +47,11 @@ export default function GroupExercisePage() {
         console.error("Error fetching users:", error);
       }
     };
-
+  
     fetchGroup();
-    fetchUsers();
+    fetchAvailableUsers();
   }, [id]);
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (existingGroup) {

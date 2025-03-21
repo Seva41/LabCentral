@@ -317,6 +317,32 @@ def dissolve_group(exercise_id):
 
     return jsonify({'message': 'Grupo disuelto correctamente'}), 200
 
+@exercise_blueprint.route('/api/exercise/<int:exercise_id>/available_users', methods=['GET'])
+def get_available_users(exercise_id):
+    decoded = decode_token()
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    # Obtener todos los grupos asociados al ejercicio
+    groups = ExerciseGroup.query.filter(ExerciseGroup.exercise_id == exercise_id).all()
+    # Crear un conjunto con los IDs de usuarios que ya están en algún grupo para este ejercicio
+    used_ids = set()
+    for group in groups:
+        used_ids.add(group.leader_id)
+        used_ids.add(group.partner_id)
+    # Excluir al usuario actual, ya que no debe poder elegirse a sí mismo
+    used_ids.add(decoded['user_id'])
+
+    # Consultar y devolver los usuarios que no están en used_ids
+    available_users = User.query.filter(~User.id.in_(list(used_ids))).all()
+    result = [{
+        'id': user.id,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name
+    } for user in available_users]
+    return jsonify(result), 200
+
 # --- Rutas de admin existentes ---
 
 @exercise_blueprint.route('/api/exercise', methods=['POST'])
