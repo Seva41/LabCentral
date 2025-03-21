@@ -53,3 +53,22 @@ class ExerciseAnswer(db.Model):
     answer_text = db.Column(db.Text, nullable=False)
     score = db.Column(db.Float, nullable=True)
     feedback = db.Column(db.Text, nullable=True)
+
+class ExerciseGroup(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercise.id'), nullable=False)
+    leader_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    partner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+    # Relaciones para facilitar consultas
+    exercise = db.relationship('Exercise', backref='groups')
+    leader = db.relationship('User', foreign_keys=[leader_id])
+    partner = db.relationship('User', foreign_keys=[partner_id])
+
+
+class GroupExerciseAnswer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('exercise_group.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('exercise_question.id'), nullable=False)
+    answer_text = db.Column(db.Text, nullable=False)
+    score = db.Column(db.Float, nullable=True)

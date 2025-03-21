@@ -77,3 +77,18 @@ footer {
 .input:focus {
   @apply shadow-lg;
 }
+
+.select {
+  @apply w-full px-4 py-2
+         rounded-xl
+         bg-white
+         text-gray-900
+         border border-white border-opacity-20
+         focus:ring-2 focus:ring-purple-400
+         transition-all duration-200 ease-in-out;
+}
+
+.select option {
+  color: #000;     /* Texto negro */
+  background: #fff; /* Fondo blanco */
+}
