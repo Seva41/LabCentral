@@ -1,9 +1,8 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 /**
- * Vista de evaluación (sólo administradores).
- * Compatible con Dark Mode.
+ * Vista de evaluación (sólo administradores) con soporte Dark Mode.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -17,13 +16,14 @@ export default function ExerciseAnswers() {
   const [individual, setIndividual] = useState([]);
   const [groups, setGroups] = useState([]);
 
-  // Edición
+  // Edición local
   const [indivScore, setIndivScore] = useState({});
   const [indivFeedback, setIndivFeedback] = useState({});
   const [groupScore, setGroupScore] = useState({});
 
   /* ---------------- helpers ---------------- */
-  const fetchAnswers = () => {
+  const fetchAnswers = useCallback(() => {
+    if (!id) return;
     setLoading(true);
     fetch(`${API_URL}/api/admin/exercise/${id}/answers`, { credentials: 'include' })
       .then(async (r) => {
@@ -34,7 +34,7 @@ export default function ExerciseAnswers() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  };
+  }, [id]);
 
   const patchAnswer = async (mode, answerId, payload) => {
     const r = await fetch(`${API_URL}/api/admin/answer/${mode}/${answerId}`, {
@@ -53,18 +53,23 @@ export default function ExerciseAnswers() {
   useEffect(() => {
     if (!id) return;
 
-    fetch(`${API_URL}/api/user`, { credentials: 'include' })
-      .then(async (r) => {
+    const verifyAdminAndLoad = async () => {
+      try {
+        const r = await fetch(`${API_URL}/api/user`, { credentials: 'include' });
         if (!r.ok) throw new Error('No autorizado');
         const u = await r.json();
         if (!u.is_admin) {
           router.replace('/dashboard');
-          throw new Error('No es admin');
+          return;
         }
-      })
-      .then(fetchAnswers)
-      .catch((e) => setError(e.message));
-  }, [id, router]);
+        fetchAnswers();
+      } catch (e) {
+        setError(e.message);
+      }
+    };
+
+    verifyAdminAndLoad();
+  }, [id, router, fetchAnswers]);
 
   /* -------------- guardar cambios ------------- */
   const handleSaveIndividual = async (ans) => {
@@ -118,7 +123,6 @@ export default function ExerciseAnswers() {
 
       <h1 className="mb-8 text-3xl font-bold">Respuestas del ejercicio #{id}</h1>
 
-      {/* ---------- INDIVIDUALES ---------- */}
       <AnswersTable
         title="Respuestas individuales"
         rows={individual}
@@ -130,7 +134,6 @@ export default function ExerciseAnswers() {
         type="individual"
       />
 
-      {/* ---------- GRUPALES ---------- */}
       <AnswersTable
         title="Respuestas grupales"
         rows={groups}
@@ -152,7 +155,7 @@ function AnswersTable({
   feedbackState = {},
   setFeedbackState = () => {},
   onSave,
-  type, // 'individual' | 'group'
+  type,
 }) {
   const isGroup = type === 'group';
   return (
@@ -199,11 +202,7 @@ function AnswersTable({
                   <input
                     type="number"
                     className="w-20 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-1 py-0.5 text-gray-800 dark:text-gray-100"
-                    value={
-                      scoreState[ans.answer_id] !== undefined
-                        ? scoreState[ans.answer_id]
-                        : ans.score ?? ''
-                    }
+                    value={scoreState[ans.answer_id] ?? ans.score ?? ''}
                     onChange={(e) =>
                       setScoreState({ ...scoreState, [ans.answer_id]: e.target.value })
                     }
@@ -214,11 +213,7 @@ function AnswersTable({
                     <textarea
                       rows={2}
                       className="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1 text-gray-800 dark:text-gray-100"
-                      value={
-                        feedbackState[ans.answer_id] !== undefined
-                          ? feedbackState[ans.answer_id]
-                          : ans.feedback ?? ''
-                      }
+                      value={feedbackState[ans.answer_id] ?? ans.feedback ?? ''}
                       onChange={(e) =>
                         setFeedbackState({
                           ...feedbackState,
@@ -245,10 +240,5 @@ function AnswersTable({
   );
 }
 
-const Th = ({ children }) => (
-  <th className="px-4 py-2 text-left font-medium">{children}</th>
-);
-
-const Td = ({ children, className = '' }) => (
-  <td className={`px-4 py-2 whitespace-nowrap ${className}`}>{children}</td>
-);
+const Th = ({ children }) => <th className="px-4 py-2 text-left font-medium">{children}</th>;
+const Td = ({ children, className = '' }) => <td className={`px-4 py-2 whitespace-nowrap ${className}`}>{children}</td>;
