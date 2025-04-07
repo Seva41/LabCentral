@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function useExerciseData(exerciseId, router) {
+  /* -------------------- estados base -------------------- */
   const [exercise, setExercise] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [containerStatus, setContainerStatus] = useState("stopped"); 
+  const [containerStatus, setContainerStatus] = useState("stopped");
   const [answers, setAnswers] = useState({});
   const [myServerAnswers, setMyServerAnswers] = useState({});
+  const [myGroupScores, setMyGroupScores] = useState({});
   const [isAdmin, setIsAdmin] = useState(false);
-  
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // Admin: Nuevo ejercicio (si lo necesitaras) y/o crear pregunta
+  /* ---------- estados admin (crear / editar) ------------ */
   const [newQuestion, setNewQuestion] = useState({
     question_text: "",
     score: 0,
@@ -22,7 +24,6 @@ export default function useExerciseData(exerciseId, router) {
   });
   const [exerciseZip, setExerciseZip] = useState(null);
 
-  // Edición de pregunta
   const [editingQuestionId, setEditingQuestionId] = useState(null);
   const [editQuestionData, setEditQuestionData] = useState({
     question_text: "",
@@ -31,195 +32,118 @@ export default function useExerciseData(exerciseId, router) {
     score: 0,
   });
 
-  // Dark Mode
+  /* -------------------- Dark‑mode ----------------------- */
   const [darkMode, setDarkMode] = useState(false);
-
-  // === 1. Al montar, lee preferencia Dark Mode y verifica usuario logueado ===
   useEffect(() => {
-    const storedDarkMode = localStorage.getItem("darkMode");
-    if (storedDarkMode === "true") {
-      setDarkMode(true);
-      document.documentElement.classList.add("dark");
-    } else {
-      setDarkMode(false);
-      document.documentElement.classList.remove("dark");
-    }
+    const stored = localStorage.getItem("darkMode") === "true";
+    setDarkMode(stored);
+    document.documentElement.classList.toggle("dark", stored);
   }, []);
+  const toggleDarkMode = () => {
+    const newVal = !darkMode;
+    setDarkMode(newVal);
+    document.documentElement.classList.toggle("dark", newVal);
+    localStorage.setItem("darkMode", newVal.toString());
+  };
 
-  // === 2. Carga datos del usuario, ejercicio, preguntas, respuestas ===
+  /* ------------------- carga inicial -------------------- */
   useEffect(() => {
     if (!exerciseId) return;
 
     const checkUser = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/user`, {
-          credentials: "include",
-        });
-        const data = await res.json();
-        if (data.error) {
-          router.push("/login");
-        } else {
-          setIsAdmin(data.is_admin);
-        }
-      } catch (error) {
-        console.error("Error checking user:", error);
-        router.push("/login");
-      }
+      const r = await fetch(`${API_URL}/api/user`, { credentials: "include" });
+      const d = await r.json();
+      if (d.error) return router.push("/login");
+      setIsAdmin(d.is_admin);
     };
 
-    const fetchExerciseDetail = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/exercise/${exerciseId}`, {
-          credentials: "include",
-        });
-        const data = await res.json();
-        if (!data.error) {
-          setExercise(data);
-        } else {
-          console.error("Error fetching exercise detail:", data.error);
-        }
-      } catch (error) {
-        console.error("Error fetching exercise detail:", error);
-      }
-    };
+    const fetchExercise = () =>
+      fetch(`${API_URL}/api/exercise/${exerciseId}`, {
+        credentials: "include",
+      })
+        .then((r) => r.json())
+        .then((d) => !d.error && setExercise(d));
 
-    const fetchQuestions = async () => {
-      try {
-        const res = await fetch(
-          `${API_URL}/api/exercise/${exerciseId}/questions`,
-          { credentials: "include" }
-        );
-        const data = await res.json();
-        if (!data.error) {
-          setQuestions(data);
-        } else {
-          console.error("Error fetching questions:", data.error);
-        }
-      } catch (error) {
-        console.error("Error fetching questions:", error);
-      }
-    };
+    const fetchQuestions = () =>
+      fetch(`${API_URL}/api/exercise/${exerciseId}/questions`, {
+        credentials: "include",
+      })
+        .then((r) => r.json())
+        .then((d) => !d.error && setQuestions(d));
 
-    const fetchMyAnswers = async () => {
-      try {
-        const res = await fetch(
-          `${API_URL}/api/exercise/${exerciseId}/my_answers`,
-          { credentials: "include" }
-        );
-        const data = await res.json();
-        if (!data.error) {
-          setMyServerAnswers(data);
-        }
-      } catch (error) {
-        console.error("Error fetching my answers:", error);
-      }
-    };
+    const fetchMyAnswers = () =>
+      fetch(`${API_URL}/api/exercise/${exerciseId}/my_answers`, {
+        credentials: "include",
+      })
+        .then((r) => r.json())
+        .then((d) => setMyServerAnswers(d));
+
+    const fetchGroupScores = () =>
+      fetch(`${API_URL}/api/exercise/${exerciseId}/my_group_scores`, {
+        credentials: "include",
+      })
+        .then((r) => r.json())
+        .then((d) => setMyGroupScores(d));
 
     checkUser();
-    fetchExerciseDetail();
+    fetchExercise();
     fetchQuestions();
     fetchMyAnswers();
+    fetchGroupScores();
   }, [exerciseId, router]);
 
-  // === Manejo de modo oscuro ===
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    if (newMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    localStorage.setItem("darkMode", newMode.toString());
-  };
-
-  // === 3. Manejo de contenedor (Start/Stop) ===
+  /* ---------------- contenedor docker ------------------ */
   const startExercise = async () => {
     setContainerStatus("starting");
-    try {
-      const response = await fetch(`${API_URL}/api/exercise/${exerciseId}/start`, {
-        method: "POST",
-        credentials: "include",
-      });
-      const data = await response.json();
-
-      if (response.ok) {
-        if (data.proxy_url) {
-          setTimeout(() => {
-            window.open(`${API_URL}${data.proxy_url}`, "_blank");
-            setContainerStatus("running");
-          }, 3000);
-        } else {
+    const r = await fetch(`${API_URL}/api/exercise/${exerciseId}/start`, {
+      method: "POST",
+      credentials: "include",
+    });
+    const d = await r.json();
+    if (r.ok) {
+      if (d.proxy_url) {
+        setTimeout(() => {
+          window.open(`${API_URL}${d.proxy_url}`, "_blank");
           setContainerStatus("running");
-        }
-      } else {
-        alert(data.error || "Failed to start exercise");
-        setContainerStatus("stopped");
-      }
-    } catch (error) {
-      console.error("Error starting exercise:", error);
+        }, 3000);
+      } else setContainerStatus("running");
+    } else {
+      alert(d.error || "Error");
       setContainerStatus("stopped");
     }
   };
 
   const stopExercise = async () => {
     setContainerStatus("stopping");
-    try {
-      const response = await fetch(`${API_URL}/api/exercise/${exerciseId}/stop`, {
+    const r = await fetch(`${API_URL}/api/exercise/${exerciseId}/stop`, {
+      method: "POST",
+      credentials: "include",
+    });
+    r.ok ? setContainerStatus("stopped") : setContainerStatus("running");
+  };
+
+  /* ---------------- respuestas alumno ------------------ */
+  const handleAnswerChange = (qid, text) =>
+    setAnswers((prev) => ({ ...prev, [qid]: text }));
+
+  const submitAnswer = async (qid) => {
+    const text = answers[qid] || "";
+    if (!text.trim()) return alert("Respuesta vacía");
+
+    const r = await fetch(
+      `${API_URL}/api/exercise/${exerciseId}/question/${qid}/answer`,
+      {
         method: "POST",
         credentials: "include",
-      });
-      const data = await response.json();
-
-      if (response.ok) {
-        setContainerStatus("stopped");
-      } else {
-        alert(data.error || "Failed to stop exercise");
-        setContainerStatus("running");
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answer_text: text }),
       }
-    } catch (error) {
-      console.error("Error stopping exercise:", error);
-      setContainerStatus("running");
-    }
-  };
-
-  // === 4. Manejo de respuestas (estudiante) ===
-  const handleAnswerChange = (questionId, text) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: text }));
-  };
-
-  const submitAnswer = async (questionId) => {
-    const answerText = answers[questionId] || "";
-    if (!answerText.trim()) {
-      alert("No puedes enviar una respuesta vacía.");
-      return;
-    }
-
-    try {
-      const res = await fetch(
-        `${API_URL}/api/exercise/${exerciseId}/question/${questionId}/answer`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answer_text: answerText }),
-        }
-      );
-      const data = await res.json();
-
-      if (res.ok) {
-        alert("Respuesta enviada correctamente");
-        setMyServerAnswers((prev) => ({
-          ...prev,
-          [questionId]: answerText,
-        }));
-      } else {
-        alert(data.error || "No se pudo enviar la respuesta");
-      }
-    } catch (error) {
-      console.error("Error submitting answer:", error);
-      alert("Error conectando con el backend");
-    }
+    );
+    const d = await r.json();
+    if (r.ok) {
+      alert("Respuesta enviada");
+      setMyServerAnswers((p) => ({ ...p, [qid]: { answer_text: text } }));
+    } else alert(d.error || "Error");
   };
 
   // === 5. Manejo de creación/edición de preguntas (Admin) ===
@@ -361,11 +285,8 @@ export default function useExerciseData(exerciseId, router) {
   };
 
   // === 6. Otras utilidades ===
-  const goBackToDashboard = () => {
-    router.push("/dashboard");
-  };
+  const goBackToDashboard = () => router.push("/dashboard");
 
-  // Cálculo de puntaje total
   const totalScore = questions.reduce((acc, q) => acc + (q.score || 0), 0);
 
   return {
@@ -378,6 +299,7 @@ export default function useExerciseData(exerciseId, router) {
     handleAnswerChange,
     submitAnswer,
     myServerAnswers,
+    myGroupScores,
     isAdmin,
     newQuestion,
     setNewQuestion,
@@ -387,6 +309,7 @@ export default function useExerciseData(exerciseId, router) {
     deleteQuestion,
     editingQuestionId,
     editQuestionData,
+    setEditQuestionData,
     startEditingQuestion,
     cancelEditing,
     saveEditedQuestion,

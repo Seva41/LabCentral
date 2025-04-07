@@ -1,13 +1,22 @@
 import jwt
 from flask import Blueprint, jsonify, request, current_app
-from .models import Exercise, User, db, ExerciseGroup, GroupExerciseAnswer
 import docker
 import os
 import re
-from werkzeug.utils import secure_filename
 import zipfile
 import shutil
+from werkzeug.utils import secure_filename
 
+from .models import (
+    Exercise,
+    ExerciseAnswer,
+    ExerciseQuestion,
+    User,
+    db,
+    ExerciseGroup,
+    GroupExerciseAnswer,
+)
+ 
 exercise_blueprint = Blueprint('exercise', __name__)
 client = docker.from_env()
 
@@ -20,7 +29,11 @@ def decode_token():
     if not token:
         return None
     try:
-        return jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        return jwt.decode(
+            token, 
+            current_app.config['SECRET_KEY'], 
+            algorithms=['HS256']
+        )
     except jwt.ExpiredSignatureError:
         return None
     except jwt.InvalidTokenError:
@@ -54,7 +67,8 @@ def get_used_ports_by_containers():
 
 def safe_extract(zip_file, extract_path):
     """
-    Extrae los archivos del ZIP en 'extract_path' tras verificar que ninguna ruta salga de este directorio.
+    Extrae los archivos del ZIP en 'extract_path' tras verificar 
+    que ninguna ruta salga de este directorio (prevención de Zip Slip).
     """
     abs_extract_path = os.path.abspath(extract_path)
     for member in zip_file.infolist():
@@ -64,11 +78,17 @@ def safe_extract(zip_file, extract_path):
             raise Exception("Zip Slip detected: " + member.filename)
     zip_file.extractall(extract_path)
 
+
+# -------------------------
+#     RUTAS DE LECTURA
+# -------------------------
+
 @exercise_blueprint.route('/api/exercises', methods=['GET'])
 def get_exercises():
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
+
     exercises = Exercise.query.all()
     result = [{'id': e.id, 'title': e.title, 'description': e.description} for e in exercises]
     return jsonify(result)
@@ -82,6 +102,7 @@ def get_user_exercises():
     user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
+
     exercises = Exercise.query.all()
     completed_exercises = [c.exercise_id for c in user.completed_exercises]
     result = []
@@ -98,14 +119,21 @@ def get_exercise_detail(exercise_id):
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
+
     exercise = Exercise.query.get(exercise_id)
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
+
     return jsonify({
         'id': exercise.id,
         'title': exercise.title,
         'description': exercise.description
     })
+
+
+# -------------------------
+#   INICIAR/DETENER CONTAINER
+# -------------------------
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>/start', methods=['POST'])
 def start_exercise(exercise_id):
@@ -116,6 +144,7 @@ def start_exercise(exercise_id):
     user = User.query.get(user_id)
     if not user:
         return jsonify({'error': 'User not found'}), 404
+
     exercise = Exercise.query.get(exercise_id)
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
@@ -125,6 +154,8 @@ def start_exercise(exercise_id):
         ExerciseGroup.exercise_id == exercise_id,
         ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
     ).first()
+
+    # Si está en un grupo y NO es el líder, no puede lanzar el contenedor
     if group and group.leader_id != user_id:
         return jsonify({'message': 'El contenedor ya fue lanzado por tu compañero'}), 403
 
@@ -170,6 +201,7 @@ def stop_exercise(exercise_id):
         return jsonify({'error': 'Unauthorized'}), 401
     user_id = decoded['user_id']
     container_name = f"user-{user_id}-exercise-{exercise_id}"
+
     try:
         container = client.containers.get(container_name)
         container.stop()
@@ -180,14 +212,21 @@ def stop_exercise(exercise_id):
     except docker.errors.APIError as e:
         return jsonify({'error': f'Failed to stop container: {str(e)}'}), 500
 
-# --- Endpoints para funcionalidad de grupos ---
+
+# -------------------------
+#   MANEJO DE GRUPOS
+# -------------------------
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>/group', methods=['POST'])
 def create_exercise_group(exercise_id):
+    """
+    Crea un grupo para el ejercicio, indicando el email del compañero.
+    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
     user_id = decoded['user_id']
+
     data = request.json
     partner_email = data.get('partner_email')
     if not partner_email:
@@ -207,12 +246,17 @@ def create_exercise_group(exercise_id):
     if existing_group:
         return jsonify({'error': 'Ya formas parte de un grupo para este ejercicio'}), 400
 
-    new_group = ExerciseGroup(exercise_id=exercise_id, leader_id=user_id, partner_id=partner.id)
+    new_group = ExerciseGroup(
+        exercise_id=exercise_id, 
+        leader_id=user_id, 
+        partner_id=partner.id
+    )
     db.session.add(new_group)
     db.session.commit()
 
     leader = User.query.get(new_group.leader_id)
-    partner = User.query.get(new_group.partner_id)
+    partner_user = User.query.get(new_group.partner_id)
+
     return jsonify({
         'message': 'Grupo creado exitosamente',
         'group_id': new_group.id,
@@ -222,8 +266,8 @@ def create_exercise_group(exercise_id):
             'email': leader.email
         },
         'partner': {
-            'id': partner.id,
-            'email': partner.email
+            'id': partner_user.id,
+            'email': partner_user.email
         }
     }), 201
 
@@ -237,6 +281,7 @@ def get_my_group(exercise_id):
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
     user_id = decoded['user_id']
+
     group = ExerciseGroup.query.filter(
         ExerciseGroup.exercise_id == exercise_id,
         ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
@@ -262,13 +307,14 @@ def get_my_group(exercise_id):
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>/submit_answer', methods=['POST'])
 def submit_group_answer(exercise_id):
     """
-    Permite enviar respuestas a nivel grupal para sincronizar las respuestas y puntajes.
-    Si el alumno forma parte de un grupo, se guarda (o actualiza) la respuesta del grupo.
+    Permite enviar respuestas a nivel grupal para las preguntas.
+    Si el alumno forma parte de un grupo, se guarda o actualiza la respuesta.
     """
     decoded = decode_token()
     if not decoded:
          return jsonify({'error': 'Unauthorized'}), 401
     user_id = decoded['user_id']
+
     data = request.json
     question_id = data.get('question_id')
     answer_text = data.get('answer_text')
@@ -279,13 +325,23 @@ def submit_group_answer(exercise_id):
         ExerciseGroup.exercise_id == exercise_id,
         ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
     ).first()
+
     if group:
-        group_answer = GroupExerciseAnswer.query.filter_by(group_id=group.id, question_id=question_id).first()
+        group_answer = GroupExerciseAnswer.query.filter_by(
+            group_id=group.id, 
+            question_id=question_id
+        ).first()
+
         if not group_answer:
-            group_answer = GroupExerciseAnswer(group_id=group.id, question_id=question_id, answer_text=answer_text)
+            group_answer = GroupExerciseAnswer(
+                group_id=group.id, 
+                question_id=question_id, 
+                answer_text=answer_text
+            )
             db.session.add(group_answer)
         else:
             group_answer.answer_text = answer_text
+
         db.session.commit()
         return jsonify({'message': 'Respuesta enviada a nivel grupal'}), 200
     else:
@@ -293,13 +349,15 @@ def submit_group_answer(exercise_id):
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>/group', methods=['DELETE'])
 def dissolve_group(exercise_id):
+    """
+    Disuelve el grupo del usuario actual (si existe) y elimina
+    las respuestas grupales asociadas.
+    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
-
     user_id = decoded['user_id']
 
-    # Busca el grupo donde el usuario es líder o compañero
     group = ExerciseGroup.query.filter(
         ExerciseGroup.exercise_id == exercise_id,
         ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
@@ -308,10 +366,10 @@ def dissolve_group(exercise_id):
     if not group:
         return jsonify({'error': 'No perteneces a ningún grupo para este ejercicio'}), 404
 
-    # Borra respuestas del grupo si existiesen
+    # Borra respuestas del grupo, si existiesen
     GroupExerciseAnswer.query.filter_by(group_id=group.id).delete()
 
-    # Finalmente, elimina el grupo
+    # Elimina el grupo en sí
     db.session.delete(group)
     db.session.commit()
 
@@ -319,18 +377,25 @@ def dissolve_group(exercise_id):
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>/available_users', methods=['GET'])
 def get_available_users(exercise_id):
+    """
+    Devuelve lista de usuarios que no estén en ningún grupo
+    de este ejercicio (excluyendo al usuario actual).
+    """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
 
     # Obtener todos los grupos asociados al ejercicio
     groups = ExerciseGroup.query.filter(ExerciseGroup.exercise_id == exercise_id).all()
-    # Crear un conjunto con los IDs de usuarios que ya están en algún grupo para este ejercicio
+
+    # Crear un conjunto con los IDs de usuarios que ya están en algún grupo
     used_ids = set()
     for group in groups:
         used_ids.add(group.leader_id)
-        used_ids.add(group.partner_id)
-    # Excluir al usuario actual, ya que no debe poder elegirse a sí mismo
+        if group.partner_id:
+            used_ids.add(group.partner_id)
+
+    # Excluir al usuario actual, para que no se invite a sí mismo
     used_ids.add(decoded['user_id'])
 
     # Consultar y devolver los usuarios que no están en used_ids
@@ -341,21 +406,28 @@ def get_available_users(exercise_id):
         'first_name': user.first_name,
         'last_name': user.last_name
     } for user in available_users]
+
     return jsonify(result), 200
 
-# --- Rutas de admin existentes ---
+
+# -------------------------
+#       ADMIN: CRUD
+# -------------------------
 
 @exercise_blueprint.route('/api/exercise', methods=['POST'])
 def add_exercise():
     """
-    Crea un ejercicio sin ZIP (por JSON), recibiendo port directamente.
+    Crea un ejercicio sin ZIP (por JSON), recibiendo `port` directamente.
+    Solo para usuarios admin.
     """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
+
     user = User.query.get(decoded['user_id'])
     if not user or not user.is_admin:
         return jsonify({'error': 'Permission denied'}), 403
+
     data = request.json
     new_exercise = Exercise(
         title=data['title'],
@@ -367,23 +439,81 @@ def add_exercise():
     db.session.commit()
     return jsonify({'message': 'Exercise added successfully'}), 201
 
-@exercise_blueprint.route('/api/exercise/<int:exercise_id>', methods=['DELETE'])
-def delete_exercise(exercise_id):
+@exercise_blueprint.route('/api/exercise_with_zip', methods=['POST'])
+def add_exercise_with_zip():
     """
-    Elimina el ejercicio de la BD y su carpeta, y se asegura de detener
-    y remover contenedores asociados para liberar el puerto.
+    Crea un nuevo ejercicio subiendo un ZIP que contiene Dockerfile y archivos extra,
+    descomprimiéndolo en /dockerfiles/<slug>.
+    El puerto se asigna automáticamente, sin pedirle al usuario que lo ingrese.
+    Solo para usuarios admin.
     """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
+
     user = User.query.get(decoded['user_id'])
     if not user or not user.is_admin:
         return jsonify({'error': 'Permission denied'}), 403
+
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    zipfile_obj = request.files.get('zipfile', None)
+
+    if not title or not zipfile_obj:
+        return jsonify({'error': 'Missing title or zipfile'}), 400
+
+    port = get_free_port()
+    slug = re.sub(r'[^A-Za-z0-9]+', '_', title.lower()).strip('_')
+    if not slug:
+        slug = "exercise"
+
+    base_dir = os.path.abspath(os.path.dirname(__file__))
+    dockerfiles_dir = os.path.join(base_dir, '..', 'dockerfiles')
+    exercise_dir = os.path.join(dockerfiles_dir, slug)
+
+    os.makedirs(exercise_dir, exist_ok=True)
+
+    zip_path = os.path.join(exercise_dir, secure_filename(zipfile_obj.filename))
+    zipfile_obj.save(zip_path)
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            safe_extract(zf, exercise_dir)
+    except Exception as e:
+        return jsonify({'error': 'Invalid or corrupted ZIP file: ' + str(e)}), 400
+    finally:
+        os.remove(zip_path)
+
+    new_exercise = Exercise(
+        title=title,
+        description=description,
+        dockerfile_path=f"dockerfiles/{slug}",
+        port=port
+    )
+    db.session.add(new_exercise)
+    db.session.commit()
+
+    return jsonify({'message': 'Exercise with ZIP added successfully'})
+
+@exercise_blueprint.route('/api/exercise/<int:exercise_id>', methods=['DELETE'])
+def delete_exercise(exercise_id):
+    """
+    Elimina el ejercicio de la BD y su carpeta, deteniendo y
+    removiendo contenedores asociados para liberar el puerto.
+    Solo para admin.
+    """
+    decoded = decode_token()
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user = User.query.get(decoded['user_id'])
+    if not user or not user.is_admin:
+        return jsonify({'error': 'Permission denied'}), 403
+
     exercise = Exercise.query.get(exercise_id)
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
 
-    # Detener y eliminar cualquier contenedor asociado a este ejercicio
+    # Detener y eliminar contenedores asociados
     containers = client.containers.list(all=True, filters={"name": f"exercise-{exercise_id}"})
     for c in containers:
         try:
@@ -395,63 +525,149 @@ def delete_exercise(exercise_id):
         except docker.errors.APIError:
             pass
 
+    # Eliminar el ejercicio de la BD
+    db.session.delete(exercise)
+    db.session.commit()
+
+    # Borrar carpeta dockerfiles asociada (si existe)
     base_dir = os.path.abspath(os.path.dirname(__file__))
     dockerfiles_root = os.path.join(base_dir, '..', 'dockerfiles')
     relative_path = exercise.dockerfile_path.replace('dockerfiles/', '').strip('/')
-    # Eliminar el registro en la BD
-    db.session.delete(exercise)
-    db.session.commit()
-    # Borrar la carpeta (si existe)
     folder_path = os.path.join(dockerfiles_root, relative_path)
+
     if os.path.isdir(folder_path):
         try:
             shutil.rmtree(folder_path)
             print(f"Carpeta '{folder_path}' eliminada")
         except Exception as e:
             print(f"No se pudo eliminar la carpeta: {e}")
+
     return jsonify({'message': 'Exercise deleted successfully'}), 200
 
-@exercise_blueprint.route('/api/exercise_with_zip', methods=['POST'])
-def add_exercise_with_zip():
+
+# -------------------------
+#   ADMIN: LISTAR/CALIFICAR
+# -------------------------
+
+@exercise_blueprint.route('/api/admin/exercise/<int:exercise_id>/answers', methods=['GET'])
+def get_exercise_answers(exercise_id):
     """
-    Crea un nuevo ejercicio subiendo un ZIP que contiene Dockerfile y archivos extra, 
-    descomprimiéndolo en /dockerfiles/<slug>.
-    El puerto se asigna automáticamente, sin pedirle al usuario que lo ingrese.
+    Devuelve en un JSON las respuestas individuales y grupales de un ejercicio.
+    Solo accesible para administradores.
     """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
-    user = User.query.get(decoded['user_id'])
-    if not user or not user.is_admin:
-        return jsonify({'error': 'Permission denied'}), 403
-    title = request.form.get('title', '').strip()
-    description = request.form.get('description', '').strip()
-    zipfile_obj = request.files.get('zipfile', None)
-    if not title or not zipfile_obj:
-        return jsonify({'error': 'Missing title or zipfile'}), 400
-    port = get_free_port()
-    slug = re.sub(r'[^A-Za-z0-9]+', '_', title.lower()).strip('_')
-    if not slug:
-        slug = "exercise"
-    base_dir = os.path.abspath(os.path.dirname(__file__))
-    dockerfiles_dir = os.path.join(base_dir, '..', 'dockerfiles')
-    exercise_dir = os.path.join(dockerfiles_dir, slug)
-    os.makedirs(exercise_dir, exist_ok=True)
-    zip_path = os.path.join(exercise_dir, secure_filename(zipfile_obj.filename))
-    zipfile_obj.save(zip_path)
-    try:
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            safe_extract(zf, exercise_dir)
-    except Exception as e:
-        return jsonify({'error': 'Invalid or corrupted ZIP file: ' + str(e)}), 400
-    finally:
-        os.remove(zip_path)
-    new_exercise = Exercise(
-        title=title,
-        description=description,
-        dockerfile_path=f"dockerfiles/{slug}",
-        port=port
+
+    admin_user = User.query.get(decoded['user_id'])
+    if not admin_user or not admin_user.is_admin:
+        return jsonify({'error': 'Forbidden'}), 403
+
+    # --- Respuestas INDIVIDUALES ---
+    individual_q = (
+        db.session.query(
+            ExerciseAnswer.id.label('answer_id'),
+            ExerciseAnswer.answer_text,
+            ExerciseAnswer.score,
+            ExerciseAnswer.feedback,
+            ExerciseQuestion.id.label('question_id'),
+            ExerciseQuestion.question_text,
+            User.id.label('user_id'),
+            User.email.label('user_email')
+        )
+        .join(ExerciseQuestion, ExerciseQuestion.id == ExerciseAnswer.question_id)
+        .join(User, User.id == ExerciseAnswer.user_id)
+        .filter(ExerciseQuestion.exercise_id == exercise_id)
     )
-    db.session.add(new_exercise)
+
+    individual_answers = [{
+        'answer_id': row.answer_id,
+        'question_id': row.question_id,
+        'question_text': row.question_text,
+        'user': {
+            'id': row.user_id,
+            'email': row.user_email
+        },
+        'answer_text': row.answer_text,
+        'score': row.score,
+        'feedback': row.feedback
+    } for row in individual_q.all()]
+
+    # --- Respuestas GRUPALES ---
+    group_q = (
+        db.session.query(
+            GroupExerciseAnswer.id.label('answer_id'),
+            GroupExerciseAnswer.answer_text,
+            GroupExerciseAnswer.score,
+            ExerciseQuestion.id.label('question_id'),
+            ExerciseQuestion.question_text,
+            ExerciseGroup.id.label('group_id'),
+            ExerciseGroup.leader_id,
+            ExerciseGroup.partner_id
+        )
+        .join(ExerciseQuestion, ExerciseQuestion.id == GroupExerciseAnswer.question_id)
+        .join(ExerciseGroup, ExerciseGroup.id == GroupExerciseAnswer.group_id)
+        .filter(ExerciseQuestion.exercise_id == exercise_id)
+    )
+
+    group_answers = []
+    for row in group_q.all():
+        leader = User.query.get(row.leader_id)
+        partner = User.query.get(row.partner_id) if row.partner_id else None
+        group_answers.append({
+            'answer_id': row.answer_id,
+            'question_id': row.question_id,
+            'question_text': row.question_text,
+            'group': {
+                'id': row.group_id,
+                'leader_email': leader.email if leader else None,
+                'partner_email': partner.email if partner else None
+            },
+            'answer_text': row.answer_text,
+            'score': row.score
+        })
+
+    return jsonify({
+        'individual_answers': individual_answers,
+        'group_answers': group_answers
+    }), 200
+
+@exercise_blueprint.route('/api/admin/answer/<string:mode>/<int:answer_id>', methods=['PATCH'])
+def grade_answer(mode, answer_id):
+    """
+    Actualiza score y feedback de una respuesta, según sea individual o grupal.
+    mode = 'individual'  -> ExerciseAnswer
+    mode = 'group'       -> GroupExerciseAnswer
+    """
+    decoded = decode_token()
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    admin_user = User.query.get(decoded['user_id'])
+    if not admin_user or not admin_user.is_admin:
+        return jsonify({'error': 'Forbidden'}), 403
+
+    data = request.json
+    new_score = data.get('score')
+    new_feedback = data.get('feedback')
+
+    if mode == 'individual':
+        answer = ExerciseAnswer.query.get(answer_id)
+    elif mode == 'group':
+        answer = GroupExerciseAnswer.query.get(answer_id)
+    else:
+        return jsonify({'error': 'Invalid mode'}), 400
+
+    if not answer:
+        return jsonify({'error': 'Answer not found'}), 404
+
+    # Asignar el nuevo score
+    answer.score = new_score
+
+    # Por defecto, sólo las respuestas individuales tienen 'feedback'.
+    # Si deseas feedback también para grupos, añade la columna 'feedback' al modelo GroupExerciseAnswer.
+    if hasattr(answer, 'feedback'):
+        answer.feedback = new_feedback
+
     db.session.commit()
-    return jsonify({'message': 'Exercise with ZIP added successfully'})
+    return jsonify({'message': 'Answer graded successfully'}), 200
