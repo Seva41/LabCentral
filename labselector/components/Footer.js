@@ -17,7 +17,7 @@ export default function Footer() {
         </span>
 
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-sm">
-          v1.1.1
+          v1.2.0
         </div>
       </div>
     </footer>
