@@ -25,6 +25,7 @@ export default function ExerciseDetail() {
     handleAnswerChange,
     submitAnswer,
     myServerAnswers,
+    myGroupScores,
     isAdmin,
     newQuestion,
     setNewQuestion,
@@ -108,6 +109,17 @@ export default function ExerciseDetail() {
           goBackToDashboard={goBackToDashboard}
         />
 
+        {/* Botón para ver respuestas de alumnos */}
+        {isAdmin && (
+          <div className="flex justify-end mt-6">
+            <Link href={`/exercises/${id}/answers`}>
+              <button className="button button-gradient">
+                Ver respuestas de alumnos
+              </button>
+            </Link>
+          </div>
+        )}
+
         {/* Sección de grupo */}
         <div className="mt-4">
           {myGroup?.group_id ? (
@@ -147,6 +159,7 @@ export default function ExerciseDetail() {
             handleAnswerChange={handleAnswerChange}
             submitAnswer={submitAnswer}
             myServerAnswers={myServerAnswers}
+            myGroupScores={myGroupScores}  
             isAdmin={isAdmin}
             deleteQuestion={deleteQuestion}
             editingQuestionId={editingQuestionId}

@@ -1,7 +1,11 @@
 import json
 import bleach
 from flask import Blueprint, request, jsonify
-from .models import ExerciseQuestion, ExerciseAnswer, User, db
+from .models import (
+    ExerciseQuestion, ExerciseAnswer,
+    ExerciseGroup, GroupExerciseAnswer,
+    User, db
+)
 from .exercise import decode_token
 
 question_blueprint = Blueprint('questions', __name__)
@@ -297,21 +301,54 @@ def delete_question(exercise_id, question_id):
 @question_blueprint.route('/api/exercise/<int:exercise_id>/my_answers', methods=['GET'])
 def get_my_answers(exercise_id):
     """
-    Devuelve un dict { question_id: answer_text } con las respuestas 
-    que el usuario actual ha enviado para las preguntas de este ejercicio.
+    Devuelve un dict { question_id: { answer_text, score, feedback } }
+    con las respuestas que el usuario actual ha enviado.
     """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
     user_id = decoded['user_id']
 
-    answers = db.session.query(ExerciseAnswer).join(ExerciseQuestion).filter(
-        ExerciseQuestion.exercise_id == exercise_id,
-        ExerciseAnswer.user_id == user_id
-    ).all()
+    answers = (
+        db.session.query(ExerciseAnswer)
+        .join(ExerciseQuestion)
+        .filter(
+            ExerciseQuestion.exercise_id == exercise_id,
+            ExerciseAnswer.user_id == user_id
+        ).all()
+    )
 
     result = {}
     for ans in answers:
-        result[ans.question_id] = ans.answer_text
+        result[ans.question_id] = {
+            "answer_text": ans.answer_text,
+            "score": ans.score,
+            "feedback": ans.feedback,
+        }
+    return jsonify(result)
 
+@question_blueprint.route('/api/exercise/<int:exercise_id>/my_group_scores', methods=['GET'])
+def get_my_group_scores(exercise_id):
+    """
+    Devuelve las respuestas del grupo del usuario actual, con puntaje.
+    """
+    decoded = decode_token()
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+    user_id = decoded['user_id']
+
+    group = ExerciseGroup.query.filter(
+        ExerciseGroup.exercise_id == exercise_id,
+        ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
+    ).first()
+    if not group:
+        return jsonify({})  # no está en grupo
+
+    answers = GroupExerciseAnswer.query.filter_by(group_id=group.id).all()
+    result = {
+        ans.question_id: {
+            "answer_text": ans.answer_text,
+            "score": ans.score
+        } for ans in answers
+    }
     return jsonify(result)
