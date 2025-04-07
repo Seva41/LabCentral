@@ -3,83 +3,75 @@ import { useEffect, useState } from 'react';
 
 /**
  * Vista de evaluación (sólo administradores).
- * Permite listar, calificar y dejar feedback a las respuestas
- * individuales y grupales de un ejercicio.
+ * Compatible con Dark Mode.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function ExerciseAnswers() {
   const router = useRouter();
-  const { id } = router.query; // id del ejercicio
+  const { id } = router.query;
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [individual, setIndividual] = useState([]); // respuestas individuales
-  const [groups, setGroups] = useState([]); // respuestas grupales
+  const [individual, setIndividual] = useState([]);
+  const [groups, setGroups] = useState([]);
 
-  // Estados locales para edición
-  const [indivScore, setIndivScore] = useState({}); // {answerId: score}
-  const [indivFeedback, setIndivFeedback] = useState({}); // {answerId: feedback}
-  const [groupScore, setGroupScore] = useState({}); // {answerId: score}
+  // Edición
+  const [indivScore, setIndivScore] = useState({});
+  const [indivFeedback, setIndivFeedback] = useState({});
+  const [groupScore, setGroupScore] = useState({});
 
-  // ---------------- Helpers ----------------
+  /* ---------------- helpers ---------------- */
   const fetchAnswers = () => {
     setLoading(true);
-    fetch(`${API_URL}/api/admin/exercise/${id}/answers`, {
-      credentials: 'include',
-    })
-      .then(async (res) => {
-        if (res.status !== 200) throw new Error('No se pudieron obtener datos');
-        const data = await res.json();
-        setIndividual(data.individual_answers || []);
-        setGroups(data.group_answers || []);
+    fetch(`${API_URL}/api/admin/exercise/${id}/answers`, { credentials: 'include' })
+      .then(async (r) => {
+        if (!r.ok) throw new Error('No se pudieron obtener datos');
+        const d = await r.json();
+        setIndividual(d.individual_answers || []);
+        setGroups(d.group_answers || []);
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   };
 
   const patchAnswer = async (mode, answerId, payload) => {
-    const res = await fetch(`${API_URL}/api/admin/answer/${mode}/${answerId}`, {
+    const r = await fetch(`${API_URL}/api/admin/answer/${mode}/${answerId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Error al guardar');
+    if (!r.ok) {
+      const d = await r.json();
+      throw new Error(d.error || 'Error al guardar');
     }
   };
 
-  // ---------------- Effects ----------------
+  /* ---------------- effects ---------------- */
   useEffect(() => {
-    if (!id) return; // espera al parámetro
+    if (!id) return;
 
-    // 1) verificar rol admin
     fetch(`${API_URL}/api/user`, { credentials: 'include' })
-      .then(async (res) => {
-        if (res.status !== 200) throw new Error('No autorizado');
-        const data = await res.json();
-        if (!data.is_admin) {
+      .then(async (r) => {
+        if (!r.ok) throw new Error('No autorizado');
+        const u = await r.json();
+        if (!u.is_admin) {
           router.replace('/dashboard');
           throw new Error('No es admin');
         }
       })
-      // 2) obtener respuestas
       .then(fetchAnswers)
       .catch((e) => setError(e.message));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, router]);
 
-  // ---------------- Guardar cambios ----------------
+  /* -------------- guardar cambios ------------- */
   const handleSaveIndividual = async (ans) => {
-    const score = indivScore[ans.answer_id];
-    const feedback = indivFeedback[ans.answer_id];
     try {
       await patchAnswer('individual', ans.answer_id, {
-        score: score === '' ? null : Number(score),
-        feedback,
+        score: indivScore[ans.answer_id] === '' ? null : Number(indivScore[ans.answer_id]),
+        feedback: indivFeedback[ans.answer_id],
       });
       fetchAnswers();
     } catch (e) {
@@ -88,10 +80,9 @@ export default function ExerciseAnswers() {
   };
 
   const handleSaveGroup = async (ans) => {
-    const score = groupScore[ans.answer_id];
     try {
       await patchAnswer('group', ans.answer_id, {
-        score: score === '' ? null : Number(score),
+        score: groupScore[ans.answer_id] === '' ? null : Number(groupScore[ans.answer_id]),
       });
       fetchAnswers();
     } catch (e) {
@@ -99,7 +90,7 @@ export default function ExerciseAnswers() {
     }
   };
 
-  // ---------------- Render ----------------
+  /* ---------------- render ---------------- */
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -111,14 +102,14 @@ export default function ExerciseAnswers() {
   if (error) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <span className="text-red-600">{error}</span>
+        <span className="text-red-600 dark:text-red-400">{error}</span>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background p-8 text-foreground">
-      {/* Botón volver */}
+      {/* volver */}
       <div className="mb-6">
         <button onClick={() => router.back()} className="button button-gradient">
           &larr; Volver
@@ -127,136 +118,137 @@ export default function ExerciseAnswers() {
 
       <h1 className="mb-8 text-3xl font-bold">Respuestas del ejercicio #{id}</h1>
 
-      {/* INDIVIDUALES */}
-      <section className="mb-16">
-        <h2 className="mb-4 text-2xl font-semibold">
-          Respuestas individuales ({individual.length})
-        </h2>
-        <div className="overflow-x-auto rounded-2xl shadow">
-          <table className="min-w-full divide-y divide-gray-200 bg-white text-sm text-gray-800">
-            <thead className="bg-gray-100 text-gray-600">
-              <tr>
-                <th className="px-4 py-2 text-left">Alumno</th>
-                <th className="px-4 py-2 text-left">Pregunta</th>
-                <th className="px-4 py-2 text-left">Respuesta</th>
-                <th className="px-4 py-2 text-left">Puntaje</th>
-                <th className="px-4 py-2 text-left">Feedback</th>
-                <th className="px-4 py-2 text-left">Guardar</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {individual.map((ans) => (
-                <tr key={ans.answer_id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-2">{ans.user.email}</td>
-                  <td className="px-4 py-2">{ans.question_text}</td>
-                  <td className="px-4 py-2 max-w-xs break-words">{ans.answer_text}</td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      className="w-20 rounded border px-1 py-0.5"
-                      value={
-                        indivScore[ans.answer_id] !== undefined
-                          ? indivScore[ans.answer_id]
-                          : ans.score ?? ''
-                      }
-                      onChange={(e) =>
-                        setIndivScore({
-                          ...indivScore,
-                          [ans.answer_id]: e.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <textarea
-                      rows={2}
-                      className="w-full rounded border px-2 py-1"
-                      value={
-                        indivFeedback[ans.answer_id] !== undefined
-                          ? indivFeedback[ans.answer_id]
-                          : ans.feedback ?? ''
-                      }
-                      onChange={(e) =>
-                        setIndivFeedback({
-                          ...indivFeedback,
-                          [ans.answer_id]: e.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-2 text-center">
-                    <button
-                      className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
-                      onClick={() => handleSaveIndividual(ans)}
-                    >
-                      Guardar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {/* ---------- INDIVIDUALES ---------- */}
+      <AnswersTable
+        title="Respuestas individuales"
+        rows={individual}
+        scoreState={indivScore}
+        setScoreState={setIndivScore}
+        feedbackState={indivFeedback}
+        setFeedbackState={setIndivFeedback}
+        onSave={handleSaveIndividual}
+        type="individual"
+      />
 
-      {/* GRUPALES */}
-      <section>
-        <h2 className="mb-4 text-2xl font-semibold">
-          Respuestas grupales ({groups.length})
-        </h2>
-        <div className="overflow-x-auto rounded-2xl shadow">
-          <table className="min-w-full divide-y divide-gray-200 bg-white text-sm text-gray-800">
-            <thead className="bg-gray-100 text-gray-600">
-              <tr>
-                <th className="px-4 py-2 text-left">Grupo</th>
-                <th className="px-4 py-2 text-left">Integrantes</th>
-                <th className="px-4 py-2 text-left">Pregunta</th>
-                <th className="px-4 py-2 text-left">Respuesta</th>
-                <th className="px-4 py-2 text-left">Puntaje</th>
-                <th className="px-4 py-2 text-left">Guardar</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {groups.map((ans) => (
-                <tr key={ans.answer_id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-2">#{ans.group.id}</td>
-                  <td className="px-4 py-2">
-                    {ans.group.leader_email}
-                    {ans.group.partner_email ? `, ${ans.group.partner_email}` : ''}
-                  </td>
-                  <td className="px-4 py-2 max-w-xs break-words">{ans.question_text}</td>
-                  <td className="px-4 py-2 max-w-xs break-words">{ans.answer_text}</td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      className="w-20 rounded border px-1 py-0.5"
-                      value={
-                        groupScore[ans.answer_id] !== undefined
-                          ? groupScore[ans.answer_id]
-                          : ans.score ?? ''
-                      }
-                      onChange={(e) =>
-                        setGroupScore({
-                          ...groupScore,
-                          [ans.answer_id]: e.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-2 text-center">
-                    <button
-                      className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
-                      onClick={() => handleSaveGroup(ans)}
-                    >
-                      Guardar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {/* ---------- GRUPALES ---------- */}
+      <AnswersTable
+        title="Respuestas grupales"
+        rows={groups}
+        scoreState={groupScore}
+        setScoreState={setGroupScore}
+        onSave={handleSaveGroup}
+        type="group"
+      />
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+function AnswersTable({
+  title,
+  rows,
+  scoreState,
+  setScoreState,
+  feedbackState = {},
+  setFeedbackState = () => {},
+  onSave,
+  type, // 'individual' | 'group'
+}) {
+  const isGroup = type === 'group';
+  return (
+    <section className={isGroup ? '' : 'mb-16'}>
+      <h2 className="mb-4 text-2xl font-semibold">
+        {title} ({rows.length})
+      </h2>
+      <div className="overflow-x-auto rounded-2xl shadow">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100">
+          <thead className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-200">
+            <tr>
+              {isGroup ? (
+                <>
+                  <Th>Grupo</Th>
+                  <Th>Integrantes</Th>
+                </>
+              ) : (
+                <Th>Alumno</Th>
+              )}
+              <Th>Pregunta</Th>
+              <Th>Respuesta</Th>
+              <Th>Puntaje</Th>
+              {!isGroup && <Th>Feedback</Th>}
+              <Th>Guardar</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((ans) => (
+              <tr key={ans.answer_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                {isGroup ? (
+                  <>
+                    <Td>#{ans.group.id}</Td>
+                    <Td>
+                      {ans.group.leader_email}
+                      {ans.group.partner_email ? `, ${ans.group.partner_email}` : ''}
+                    </Td>
+                  </>
+                ) : (
+                  <Td>{ans.user.email}</Td>
+                )}
+                <Td className="max-w-xs break-words">{ans.question_text}</Td>
+                <Td className="max-w-xs break-words">{ans.answer_text}</Td>
+                <Td>
+                  <input
+                    type="number"
+                    className="w-20 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-1 py-0.5 text-gray-800 dark:text-gray-100"
+                    value={
+                      scoreState[ans.answer_id] !== undefined
+                        ? scoreState[ans.answer_id]
+                        : ans.score ?? ''
+                    }
+                    onChange={(e) =>
+                      setScoreState({ ...scoreState, [ans.answer_id]: e.target.value })
+                    }
+                  />
+                </Td>
+                {!isGroup && (
+                  <Td>
+                    <textarea
+                      rows={2}
+                      className="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1 text-gray-800 dark:text-gray-100"
+                      value={
+                        feedbackState[ans.answer_id] !== undefined
+                          ? feedbackState[ans.answer_id]
+                          : ans.feedback ?? ''
+                      }
+                      onChange={(e) =>
+                        setFeedbackState({
+                          ...feedbackState,
+                          [ans.answer_id]: e.target.value,
+                        })
+                      }
+                    />
+                  </Td>
+                )}
+                <Td className="text-center">
+                  <button
+                    className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700"
+                    onClick={() => onSave(ans)}
+                  >
+                    Guardar
+                  </button>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+const Th = ({ children }) => (
+  <th className="px-4 py-2 text-left font-medium">{children}</th>
+);
+
+const Td = ({ children, className = '' }) => (
+  <td className={`px-4 py-2 whitespace-nowrap ${className}`}>{children}</td>
+);
