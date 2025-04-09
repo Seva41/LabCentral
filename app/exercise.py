@@ -6,6 +6,8 @@ import re
 import zipfile
 import shutil
 from werkzeug.utils import secure_filename
+import threading
+import time
 
 from .models import (
     Exercise,
@@ -78,6 +80,17 @@ def safe_extract(zip_file, extract_path):
             raise Exception("Zip Slip detected: " + member.filename)
     zip_file.extractall(extract_path)
 
+def kill_container_after(name, seconds):
+    time.sleep(seconds)
+    try:
+        container = client.containers.get(name)
+        container.reload()
+        if container.status == 'running':
+            container.kill()
+            container.remove()
+            print(f"{name} was killed after {seconds} seconds")
+    except docker.errors.NotFound:
+        pass
 
 # -------------------------
 #     RUTAS DE LECTURA
@@ -140,6 +153,7 @@ def start_exercise(exercise_id):
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
+
     user_id = decoded['user_id']
     user = User.query.get(user_id)
     if not user:
@@ -149,19 +163,17 @@ def start_exercise(exercise_id):
     if not exercise:
         return jsonify({'error': 'Exercise not found'}), 404
 
-    # Verificar si el usuario forma parte de un grupo para este ejercicio.
+    # Verificar si el usuario forma parte de un grupo y si es el líder
     group = ExerciseGroup.query.filter(
         ExerciseGroup.exercise_id == exercise_id,
         ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
     ).first()
-
-    # Si está en un grupo y NO es el líder, no puede lanzar el contenedor
     if group and group.leader_id != user_id:
         return jsonify({'message': 'El contenedor ya fue lanzado por tu compañero'}), 403
 
     try:
         container_name = f"user-{user_id}-exercise-{exercise_id}"
-        # Verificar si ya existe el contenedor
+        # Verificar si ya existe un contenedor
         try:
             existing_container = client.containers.get(container_name)
             if existing_container.status == "running":
@@ -170,6 +182,7 @@ def start_exercise(exercise_id):
                     'proxy_url': f'/api/exercise/{exercise_id}/proxy'
                 })
             else:
+                # Si estaba detenido, forzar su eliminación para crear uno nuevo
                 existing_container.remove(force=True)
         except docker.errors.NotFound:
             pass
@@ -179,15 +192,20 @@ def start_exercise(exercise_id):
         build_path = exercise.dockerfile_path
         client.images.build(path=build_path, tag=image_tag)
 
-        # Correr el contenedor sin mapear puertos externos
+        # Correr el contenedor con límites de recursos
         container = client.containers.run(
             image_tag,
             detach=True,
             name=container_name,
             network="lab_app_net",
-            mem_limit="512m",
-            nano_cpus=500000000
+            mem_limit="512m",        # Máximo 512 MB de RAM
+            nano_cpus=500000000      # ~0.5 CPU
         )
+
+        # Crear un hilo que matará el contenedor luego de 2 horas (7200 segundos)
+        t = threading.Thread(target=kill_container_after, args=(container_name, 7200))
+        t.daemon = True
+        t.start()
 
         return jsonify({
             'message': f'Exercise {exercise_id} started successfully',
