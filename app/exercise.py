@@ -184,7 +184,9 @@ def start_exercise(exercise_id):
             image_tag,
             detach=True,
             name=container_name,
-            network="lab_app_net"
+            network="lab_app_net",
+            mem_limit="512m",
+            nano_cpus=500000000
         )
 
         return jsonify({
