@@ -1,4 +1,0 @@
-Flask
-Flask-WTF
-Flask-Session
-Flask-Limiter

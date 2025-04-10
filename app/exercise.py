@@ -85,12 +85,27 @@ def kill_container_after(name, seconds):
     try:
         container = client.containers.get(name)
         container.reload()
-        if container.status == 'running':
-            container.kill()
-            container.remove()
-            print(f"{name} was killed after {seconds} seconds")
+        
+        # Si sigue en estado 'running' o 'restarting', lo detenemos
+        if container.status in ['running', 'restarting']:
+            container.stop()
+            container.wait()  # Asegura que termine de parar
+
+        # Intentamos remover
+        container.remove()
+        print(f"{name} was stopped and removed after {seconds} seconds")
+
     except docker.errors.NotFound:
+        # El contenedor ya no existe (probablemente alguien más lo removió)
         pass
+    except docker.errors.APIError as e:
+        # Manejar el caso "removal of container ... is already in progress"
+        if "removal of container" in str(e) and "is already in progress" in str(e):
+            # Docker ya lo está eliminando, no hacemos nada extra
+            pass
+        else:
+            # Errores distintos al 409 se relanzan
+            raise
 
 # -------------------------
 #     RUTAS DE LECTURA
@@ -142,6 +157,26 @@ def get_exercise_detail(exercise_id):
         'title': exercise.title,
         'description': exercise.description
     })
+
+@exercise_blueprint.route('/api/exercise/<int:exercise_id>/status', methods=['GET'])
+def get_exercise_status(exercise_id):
+    """
+    Devuelve { "status": "running" } o { "status": "stopped" } 
+    según el estado real del contenedor (o 404 si no existe).
+    """
+    decoded = decode_token()
+    if not decoded:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    user_id = decoded['user_id']
+    container_name = f"user-{user_id}-exercise-{exercise_id}"
+
+    try:
+        container = client.containers.get(container_name)
+        container.reload()
+        return jsonify({"status": container.status})
+    except docker.errors.NotFound:
+        return jsonify({"status": "not_found"}), 200
 
 
 # -------------------------
