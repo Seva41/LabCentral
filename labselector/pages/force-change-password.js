@@ -5,10 +5,18 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function ForceChangePassword() {
   const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const router = useRouter();
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
+
+    // 1. Verificar que las contraseñas coincidan
+    if (newPassword !== confirmNewPassword) {
+      alert("Las contraseñas no coinciden");
+      return;
+    }
+
     try {
       const token = localStorage.getItem("temp_force_token");
       if (!token) {
@@ -17,14 +25,16 @@ export default function ForceChangePassword() {
         return;
       }
 
+      // 2. Si coinciden, se envía la solicitud al backend
       const response = await fetch(`${API_URL}/api/force_change_password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({ new_password: newPassword }),
       });
+
       const data = await response.json();
 
       if (response.ok) {
@@ -47,15 +57,21 @@ export default function ForceChangePassword() {
         <h1 className="text-3xl font-bold text-center mb-8">Cambiar Contraseña</h1>
 
         <form onSubmit={handleChangePassword} className="card p-6 space-y-4">
-          <p>
-            Ingresa tu nueva contraseña para completar el proceso de cambio obligatorio.
-          </p>
+          <p>Ingresa tu nueva contraseña y confírmala para completar el proceso.</p>
           <input
             type="password"
             placeholder="Nueva Contraseña"
             className="input"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Confirmar Nueva Contraseña"
+            className="input"
+            value={confirmNewPassword}
+            onChange={(e) => setConfirmNewPassword(e.target.value)}
             required
           />
           <button type="submit" className="button w-full bg-blue-600 hover:bg-blue-800">
