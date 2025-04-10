@@ -103,6 +103,7 @@ def kill_container_after(name, seconds):
         if "removal of container" in str(e) and "is already in progress" in str(e):
             # Docker ya lo está eliminando, no hacemos nada extra
             current_app.logger.info(f"Ignoring error for container '{name}': {str(e)}")
+            pass
         else:
             # Errores distintos al 409 se relanzan
             raise
