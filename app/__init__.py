@@ -76,24 +76,37 @@ def create_app():
         db.create_all()
 
         if not Exercise.query.first():
-            json_path = "/app/app/exercises.json"
+            json_path = os.path.join(os.path.dirname(__file__), "exercises.json")
             try:
                 with open(json_path, "r", encoding="utf-8") as f:
-                    exercises_data = json.load(f)
-                for item in exercises_data:
-                    new_exercise = Exercise(
-                        title=item["title"],
-                        description=item["description"],
-                        dockerfile_path=item["dockerfile_path"],
-                        port=item["port"],
-                    )
-                    db.session.add(new_exercise)
-                db.session.commit()
-                print("Ejercicios creados exitosamente desde exercises.json")
+                    # Leemos el contenido bruto
+                    file_content = f.read().strip()
+
+                    # Si no hay contenido, evitamos decodificar
+                    if not file_content:
+                        print(f"El archivo {json_path} está vacío. No se crearon ejercicios.")
+                    else:
+                        # Decodificamos el JSON
+                        exercises_data = json.loads(file_content)
+
+                        # Verificamos si el JSON decodificado está vacío
+                        if not exercises_data:
+                            print("El JSON está vacío (array o diccionario sin datos). No se crearon ejercicios.")
+                        else:
+                            # Cargamos cada ejercicio
+                            for item in exercises_data:
+                                new_exercise = Exercise(
+                                    title=item.get("title", "Sin título"),
+                                    description=item.get("description", "Sin descripción"),
+                                    dockerfile_path=item.get("dockerfile_path", ""),
+                                    port=item.get("port", 8000),
+                                )
+                                db.session.add(new_exercise)
+                            db.session.commit()
+                            print("Ejercicios creados exitosamente desde exercises.json")
+
             except FileNotFoundError:
-                print(
-                    f"No se encontró el archivo {json_path}. No se crearon ejercicios."
-                )
+                print(f"No se encontró el archivo {json_path}. No se crearon ejercicios.")
             except json.JSONDecodeError as e:
                 print(f"Error al decodificar JSON: {str(e)}. No se crearon ejercicios.")
 
