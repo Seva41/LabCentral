@@ -1,8 +1,8 @@
+import { APP_CONFIG } from '../config';
+
 export default function Footer() {
   return (
-    <footer
-      className="footer"
-    >
+    <footer className="footer">
       <div className="relative w-full text-center">
         <span>
           LabCentral © 2025 - Desarrollado por{' '}
@@ -16,8 +16,8 @@ export default function Footer() {
           </a>
         </span>
 
-        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-sm">
-          v1.2.3
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-sm version-label">
+          v{APP_CONFIG.version}
         </div>
       </div>
     </footer>

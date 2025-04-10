@@ -115,12 +115,30 @@ export default function useExerciseData(exerciseId, router) {
 
   const stopExercise = async () => {
     setContainerStatus("stopping");
-    const r = await fetch(`${API_URL}/api/exercise/${exerciseId}/stop`, {
-      method: "POST",
-      credentials: "include",
+    const r = await fetch(`${API_URL}/api/exercise/${exerciseId}/stop`, { 
+      method: "POST", 
+      credentials: "include" 
     });
-    r.ok ? setContainerStatus("stopped") : setContainerStatus("running");
+    if (r.ok) {
+      setContainerStatus("stopped");
+    } else {
+      setContainerStatus("running");
+    }
   };
+
+  async function checkContainerStatus() {
+    try {
+      const resp = await fetch(`${API_URL}/api/exercise/${exerciseId}/status`, {
+        credentials: "include",
+      });
+      const data = await resp.json();
+      // data.status = "running" | "stopped" | "not_found"...
+      setContainerStatus(data.status || "stopped");
+    } catch (error) {
+      console.error("No se pudo obtener estado de contenedor:", error);
+      setContainerStatus("stopped");
+    }
+  }
 
   /* ---------------- respuestas alumno ------------------ */
   const handleAnswerChange = (qid, text) =>
