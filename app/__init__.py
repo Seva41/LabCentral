@@ -76,7 +76,7 @@ def create_app():
         db.create_all()
 
         if not Exercise.query.first():
-            json_path = "exercises.json"
+            json_path = os.path.join(os.path.dirname(__file__), "exercises.json")
             try:
                 with open(json_path, "r", encoding="utf-8") as f:
                     # Leemos el contenido bruto
