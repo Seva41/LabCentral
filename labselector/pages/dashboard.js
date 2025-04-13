@@ -140,7 +140,11 @@ function Dashboard() {
         )}
 
         <CollapsibleCard title="Lista de Ejercicios" defaultOpen={true}>
-          <ExercisesList exercises={exercises} isAdmin={isAdmin} deleteExercise={deleteExercise} />
+          <ExercisesList
+            exercises={exercises}
+            isAdmin={isAdmin}
+            deleteExercise={deleteExercise}
+          />
         </CollapsibleCard>
       </div>
     </div>
