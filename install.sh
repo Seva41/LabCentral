@@ -12,6 +12,7 @@
 #   • Actualizar el API URL del Frontend en labselector/.env.local y en docker-compose.prod.yml.
 #   • Crear un servicio systemd que ejecute "docker compose -f docker-compose.prod.yml up --build" para iniciar LabCentral.
 #   • Soportar actualización y desinstalación.
+#   • Mostrar una barra de progreso durante la instalación.
 
 # Verificar que se ejecuta como root
 if [ "$EUID" -ne 0 ]; then
@@ -19,16 +20,54 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Directorio de la aplicación: se asume la raíz del repositorio
-APP_DIR="$(pwd)"
-# Archivo de variables de entorno para el backend
-ENV_FILE="$APP_DIR/.env"
-# Archivo de variables para el frontend (Next.js)
-FRONT_ENV_FILE="$APP_DIR/labselector/.env.local"
-# Servicio systemd
-SYSTEMD_SERVICE="/etc/systemd/system/labcentral.service"
-# Archivo docker-compose de producción
-DC_FILE="$APP_DIR/docker-compose.prod.yml"
+###########################################################
+#              LOGO DE LABCENTRAL EN ASCII                #
+###########################################################
+cat << "EOF"
+ _             _      _____               _                _ 
+| |           | |    /  __ \             | |              | |
+| |      __ _ | |__  | /  \/  ___  _ __  | |_  _ __  __ _ | |
+| |     / _` || '_ \ | |     / _ \| '_ \ | __|| '__|/ _` || |
+| |____| (_| || |_) || \__/\|  __/| | | || |_ | |  | (_| || |
+\_____/ \__,_||_.__/  \____/ \___||_| |_| \__||_|   \__,_||_|
+                                                             
+                                                                                         
+EOF
+echo ""
+
+# Variables globales de la instalación
+APP_DIR="$(pwd)"                                  # Raíz del repositorio
+ENV_FILE="$APP_DIR/.env"                           # Archivo de variables para el backend
+FRONT_ENV_FILE="$APP_DIR/labselector/.env.local"   # Archivo de variables para el frontend
+SYSTEMD_SERVICE="/etc/systemd/system/labcentral.service"  # Archivo del servicio systemd
+DC_FILE="$APP_DIR/docker-compose.prod.yml"         # Archivo de docker-compose para producción
+
+# Variables para barra de progreso (7 pasos definidos)
+total_steps=7
+current_step=0
+
+# Función que imprime la barra de progreso
+print_progress_bar() {
+    local progress=$1
+    local total=$2
+    local percent=$(( progress * 100 / total ))
+    local bar_width=50
+    local filled=$(( percent * bar_width / 100 ))
+    local empty=$(( bar_width - filled ))
+    # Construir la barra con caracteres '#' para llenado y espacios para lo restante.
+    local bar
+    bar=$(printf "%0.s#" $(seq 1 $filled))
+    local spaces
+    spaces=$(printf "%0.s " $(seq 1 $empty))
+    printf "\rProgreso: [%s%s] %3d%%" "$bar" "$spaces" "$percent"
+}
+
+# Función para actualizar la barra de progreso con un mensaje de paso
+update_progress() {
+    current_step=$(( current_step + 1 ))
+    print_progress_bar "$current_step" "$total_steps"
+    echo "  - $1"
+}
 
 check_dependencies() {
     echo "Verificando dependencias..."
@@ -74,15 +113,16 @@ configure_admin() {
 ADMIN_EMAIL=$admin_email
 ADMIN_PASSWORD=$admin_pass
 EOF
-    echo "Datos del admin guardados en $ENV_FILE."
+    update_progress "Usuario admin configurado."
 }
 
 configure_backend_env() {
     echo "Detectando direcciones IP del servidor para configurar CORS..."
     ips=$(hostname -I | xargs)  # Obtiene las IP(s) en una línea
     echo "Direcciones IP detectadas: $ips"
-    # Se añaden al archivo .env la variable CORS_ALLOWED_IPS
+    # Añadir la variable CORS_ALLOWED_IPS al archivo .env
     echo "CORS_ALLOWED_IPS=$ips" >> "$ENV_FILE"
+    update_progress "Variables del backend configuradas (CORS_ALLOWED_IPS)."
 }
 
 configure_frontend_api_url() {
@@ -96,14 +136,12 @@ configure_frontend_api_url() {
     echo "NEXT_PUBLIC_API_URL=$new_url" > "$FRONT_ENV_FILE"
     echo "Archivo $FRONT_ENV_FILE actualizado."
 
-    # Actualizar docker-compose.prod.yml: tanto en los build args como en las variables de entorno,
-    # se reemplaza el valor anterior por el nuevo.
-    # Se asume que en el archivo docker-compose.prod.yml aparece NEXT_PUBLIC_API_URL en dos lugares.
-    # Actualizamos la línea en la sección de build.args:
+    # Actualizar docker-compose.prod.yml:
+    # Reemplazar en la sección de build.args:
     sed -i -E "s|(NEXT_PUBLIC_API_URL:)[[:space:]]*http://[0-9.]+:5001|\1 http://$frontend_ip:5001|g" "$DC_FILE"
-    # Actualizamos la línea en la sección de environment:
+    # Reemplazar en la sección de environment:
     sed -i -E "s|(-[[:space:]]*NEXT_PUBLIC_API_URL=)http://[0-9.]+:5001|\1http://$frontend_ip:5001|g" "$DC_FILE"
-    echo "Actualizado NEXT_PUBLIC_API_URL en $DC_FILE."
+    update_progress "API URL del frontend configurado y actualizado en docker-compose."
 }
 
 create_systemd_service() {
@@ -124,35 +162,40 @@ TimeoutStartSec=0
 [Install]
 WantedBy=multi-user.target
 EOF
-
     systemctl daemon-reload
     systemctl enable labcentral.service
-    echo "Servicio systemd 'labcentral.service' creado y habilitado."
+    update_progress "Servicio systemd creado y habilitado."
 }
 
 install_app() {
+    echo "Iniciando instalación de LabCentral..."
+    # Paso 1: Actualizar el repositorio
     echo "Actualizando el repositorio (git pull)..."
     git pull
+    update_progress "Repositorio actualizado."
 
-    echo "Instalando LabCentral en producción..."
+    # Paso 2: Verificar dependencias
     check_dependencies
+    update_progress "Dependencias verificadas."
 
-    # Configurar el entorno del backend
-    echo "Creando archivo de variables para el backend ($ENV_FILE)..."
-    > "$ENV_FILE"
+    # Paso 3: Configurar el usuario admin (archivo .env)
     configure_admin
+
+    # Paso 4: Configurar variables del backend (CORS_ALLOWED_IPS)
     configure_backend_env
 
-    # Configurar el API URL del frontend y actualizar docker-compose.prod.yml
+    # Paso 5: Configurar el API URL para el Frontend y actualizar docker-compose
     configure_frontend_api_url
 
+    # Paso 6: Crear el servicio systemd
     create_systemd_service
 
-    # Arrancar LabCentral usando docker compose (detached)
+    # Paso 7: Iniciar LabCentral con docker compose (modo detached)
     cd "$APP_DIR"
-    echo "Iniciando LabCentral..."
+    echo "Iniciando LabCentral con docker compose..."
     docker compose -f docker-compose.prod.yml up --build -d
-    echo "LabCentral se ha iniciado y está configurado para arrancar con el sistema."
+    update_progress "LabCentral iniciado."
+    echo -e "\nInstalación completada."
 }
 
 update_app() {
