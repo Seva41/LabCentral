@@ -12,7 +12,7 @@ function ExercisesList({ exercises, isAdmin, deleteExercise }) {
           <p className="text-sm mb-4">{exercise.description}</p>
           <Link href={`/exercises/${exercise.id}`}>
             <button
-              className="px-4 py-2 rounded text-white bg-purple-700 hover:bg-purple-800 transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600"
+              className="button button-gradient px-4 py-2 rounded text-white bg-purple-700 hover:bg-purple-800 transition-transform duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600"
             >
               Ver detalle
             </button>

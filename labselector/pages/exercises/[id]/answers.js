@@ -29,6 +29,7 @@ export default function ExerciseAnswers() {
       .then(async (r) => {
         if (!r.ok) throw new Error('No se pudieron obtener datos');
         const d = await r.json();
+        // Se espera que el backend retorne individual_answers y group_answers
         setIndividual(d.individual_answers || []);
         setGroups(d.group_answers || []);
       })
@@ -114,7 +115,7 @@ export default function ExerciseAnswers() {
 
   return (
     <div className="min-h-screen bg-background p-8 text-foreground">
-      {/* volver */}
+      {/* Botón para volver */}
       <div className="mb-6">
         <button onClick={() => router.back()} className="button button-gradient">
           &larr; Volver
@@ -187,16 +188,19 @@ function AnswersTable({
               <tr key={ans.answer_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                 {isGroup ? (
                   <>
-                    <Td>#{ans.group.id}</Td>
+                    <Td>#{ans.group?.id || '-'}</Td>
                     <Td>
-                      {ans.group.leader_email}
-                      {ans.group.partner_email ? `, ${ans.group.partner_email}` : ''}
+                      {ans.group?.leader_email || '-'} 
+                      {ans.group?.partner_email ? `, ${ans.group.partner_email}` : ''}
                     </Td>
                   </>
                 ) : (
-                  <Td>{ans.user.email}</Td>
+                  <Td>{ans.user?.email || '-'}</Td>
                 )}
-                <Td className="max-w-xs break-words">{ans.question_text}</Td>
+                {/* Si el objeto no trae question_text, se utiliza un placeholder */}
+                <Td className="max-w-xs break-words">
+                  {ans.question_text || `Pregunta #${ans.question_id}`}
+                </Td>
                 <Td className="max-w-xs break-words">{ans.answer_text}</Td>
                 <Td>
                   <input

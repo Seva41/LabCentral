@@ -180,35 +180,69 @@ def list_questions(exercise_id):
 @question_blueprint.route('/api/exercise/<int:exercise_id>/question/<int:question_id>/answer', methods=['POST'])
 def submit_answer(exercise_id, question_id):
     """
-    Envía una respuesta a la pregunta (solo se puede responder una vez).
+    Permite enviar una respuesta.
+    - Si el usuario pertenece a un grupo, se guarda (o actualiza) la respuesta a nivel grupal,
+      lo que implica que ambos integrantes tendrán la misma respuesta.
+    - Si el usuario no está en un grupo, se guarda la respuesta de forma individual.
+    En ambos casos, si ya se ha enviado la respuesta (individual o grupal), no se permite editarla.
     """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
     user_id = decoded['user_id']
 
-    existing = ExerciseAnswer.query.filter_by(user_id=user_id, question_id=question_id).first()
-    if existing:
-        return jsonify({'error': 'Ya respondiste esta pregunta, no se puede editar.'}), 400
-
     data = request.json
     answer_text = bleach.clean(data.get('answer_text', ''))
+    if answer_text == '':
+        return jsonify({'error': 'El texto de la respuesta no puede estar vacío'}), 400
 
-    new_answer = ExerciseAnswer(
-        question_id=question_id,
-        user_id=user_id,
-        answer_text=answer_text
-    )
-    db.session.add(new_answer)
-    db.session.commit()
+    # Verificamos si el usuario forma parte de un grupo para este ejercicio.
+    group = ExerciseGroup.query.filter(
+        ExerciseGroup.exercise_id == exercise_id,
+        ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
+    ).first()
 
-    return jsonify({'message': 'Answer saved'}), 201
+    if group:
+        # Si es parte de un grupo, se guarda la respuesta grupal.
+        group_answer = GroupExerciseAnswer.query.filter_by(
+            group_id=group.id,
+            question_id=question_id
+        ).first()
+        if group_answer:
+            # Si ya existe, no permitimos modificarla (o se podría permitir actualizarla si se quiere)
+            return jsonify({'error': 'Ya se envió la respuesta grupal para esta pregunta'}), 400
+        else:
+            group_answer = GroupExerciseAnswer(
+                group_id=group.id,
+                question_id=question_id,
+                answer_text=answer_text
+            )
+            db.session.add(group_answer)
+            db.session.commit()
+            return jsonify({'message': 'Respuesta grupal enviada, válida para ambos integrantes'}), 200
+    else:
+        # Si el usuario no pertenece a un grupo, se procede con la respuesta individual.
+        existing = ExerciseAnswer.query.filter_by(
+            user_id=user_id,
+            question_id=question_id
+        ).first()
+        if existing:
+            return jsonify({'error': 'Ya respondiste esta pregunta, no se puede editar.'}), 400
+
+        new_answer = ExerciseAnswer(
+            question_id=question_id,
+            user_id=user_id,
+            answer_text=answer_text
+        )
+        db.session.add(new_answer)
+        db.session.commit()
+        return jsonify({'message': 'Respuesta individual enviada'}), 201
 
 
 @question_blueprint.route('/api/exercise/<int:exercise_id>/answers', methods=['GET'])
 def list_answers(exercise_id):
     """
-    Lista todas las respuestas de los usuarios para las preguntas de un ejercicio (solo admin).
+    Lista todas las respuestas (individuales y grupales) de los usuarios para las preguntas de un ejercicio (solo admin).
     """
     decoded = decode_token()
     if not decoded:
@@ -218,21 +252,55 @@ def list_answers(exercise_id):
     if not user or not user.is_admin:
         return jsonify({'error': 'Forbidden'}), 403
 
+    # Obtenemos todas las preguntas del ejercicio
     questions = ExerciseQuestion.query.filter_by(exercise_id=exercise_id).all()
     question_ids = [q.id for q in questions]
-    answers = ExerciseAnswer.query.filter(ExerciseAnswer.question_id.in_(question_ids)).all()
 
-    results = []
-    for ans in answers:
-        results.append({
+    # 1. Respuestas individuales
+    individual_answers_query = ExerciseAnswer.query.filter(
+        ExerciseAnswer.question_id.in_(question_ids)
+    ).all()
+    individual_answers = []
+    for ans in individual_answers_query:
+        answer_user = User.query.get(ans.user_id)
+        individual_answers.append({
             'answer_id': ans.id,
             'question_id': ans.question_id,
-            'user_id': ans.user_id,
             'answer_text': ans.answer_text,
             'score': ans.score,
-            'feedback': ans.feedback
+            'feedback': ans.feedback,
+            'user': {
+                'id': ans.user_id,
+                'email': answer_user.email if answer_user else 'N/D'
+            }
         })
-    return jsonify(results), 200
+
+    # 2. Respuestas grupales: unimos la respuesta de grupo con la información del grupo
+    group_answers_query = GroupExerciseAnswer.query.join(
+        ExerciseGroup, GroupExerciseAnswer.group_id == ExerciseGroup.id
+    ).filter(ExerciseGroup.exercise_id == exercise_id).all()
+    group_answers = []
+    for ans in group_answers_query:
+        group = ExerciseGroup.query.get(ans.group_id)
+        leader = User.query.get(group.leader_id) if group else None
+        partner = User.query.get(group.partner_id) if group and group.partner_id else None
+
+        group_answers.append({
+            'answer_id': ans.id,
+            'question_id': ans.question_id,
+            'answer_text': ans.answer_text,
+            'score': ans.score,
+            'group': {
+                'id': group.id if group else None,
+                'leader_email': leader.email if leader else 'N/D',
+                'partner_email': partner.email if partner else None,
+            }
+        })
+
+    return jsonify({
+        'individual_answers': individual_answers,
+        'group_answers': group_answers
+    }), 200
 
 
 @question_blueprint.route('/api/exercise/<int:exercise_id>/answer/<int:answer_id>/evaluate', methods=['PATCH'])
@@ -301,31 +369,58 @@ def delete_question(exercise_id, question_id):
 @question_blueprint.route('/api/exercise/<int:exercise_id>/my_answers', methods=['GET'])
 def get_my_answers(exercise_id):
     """
-    Devuelve un dict { question_id: { answer_text, score, feedback } }
-    con las respuestas que el usuario actual ha enviado.
+    Devuelve las respuestas relacionadas al usuario actual:
+    - Si está en un grupo, se devuelven las respuestas del grupo.
+    - Si no está en un grupo, se devuelven las individuales.
     """
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
     user_id = decoded['user_id']
 
-    answers = (
-        db.session.query(ExerciseAnswer)
-        .join(ExerciseQuestion)
-        .filter(
-            ExerciseQuestion.exercise_id == exercise_id,
-            ExerciseAnswer.user_id == user_id
-        ).all()
-    )
+    group = ExerciseGroup.query.filter(
+        ExerciseGroup.exercise_id == exercise_id,
+        ((ExerciseGroup.leader_id == user_id) | (ExerciseGroup.partner_id == user_id))
+    ).first()
+    
+    if group:
+        # Devolver respuestas grupales
+        answers = GroupExerciseAnswer.query.filter_by(group_id=group.id).all()
+        result = {}
+        for ans in answers:
+            result[ans.question_id] = {
+                "answer_text": ans.answer_text,
+                "score": ans.score
+            }
+        return jsonify({
+            'type': 'group',
+            'group_id': group.id,
+            'leader_id': group.leader_id,
+            'partner_id': group.partner_id,
+            'answers': result
+        })
+    else:
+        # Devolver respuestas individuales
+        answers = (
+            db.session.query(ExerciseAnswer)
+            .join(ExerciseQuestion)
+            .filter(
+                ExerciseQuestion.exercise_id == exercise_id,
+                ExerciseAnswer.user_id == user_id
+            ).all()
+        )
 
-    result = {}
-    for ans in answers:
-        result[ans.question_id] = {
-            "answer_text": ans.answer_text,
-            "score": ans.score,
-            "feedback": ans.feedback,
-        }
-    return jsonify(result)
+        result = {}
+        for ans in answers:
+            result[ans.question_id] = {
+                "answer_text": ans.answer_text,
+                "score": ans.score,
+                "feedback": ans.feedback,
+            }
+        return jsonify({
+            'type': 'individual',
+            'answers': result
+        })
 
 @question_blueprint.route('/api/exercise/<int:exercise_id>/my_group_scores', methods=['GET'])
 def get_my_group_scores(exercise_id):

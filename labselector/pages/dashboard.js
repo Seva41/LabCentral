@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import DashboardHeader from "../components/DashboardHeader";
 import AdminPanel from "../components/AdminPanel";
 import ExercisesList from "../components/ExercisesList";
+import CollapsibleCard from "../components/CollapsibleCard";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -131,13 +132,20 @@ function Dashboard() {
           handleLogout={handleLogout}
         />
 
-        {isAdmin && <AdminPanel refreshExercises={fetchExercises} />}
+        {/* Panel de administración en tarjeta colapsable */}
+        {isAdmin && (
+          <CollapsibleCard title="Panel de Administración" defaultOpen={false}>
+            <AdminPanel refreshExercises={fetchExercises} />
+          </CollapsibleCard>
+        )}
 
-        <ExercisesList
-          exercises={exercises}
-          isAdmin={isAdmin}
-          deleteExercise={deleteExercise}
-        />
+        <CollapsibleCard title="Lista de Ejercicios" defaultOpen={true}>
+          <ExercisesList
+            exercises={exercises}
+            isAdmin={isAdmin}
+            deleteExercise={deleteExercise}
+          />
+        </CollapsibleCard>
       </div>
     </div>
   );
