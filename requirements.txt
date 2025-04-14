@@ -9,3 +9,4 @@ docker
 pyjwt
 bleach
 gunicorn
+python-dotenv

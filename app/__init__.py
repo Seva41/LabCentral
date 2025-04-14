@@ -9,15 +9,21 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_limiter.errors import RateLimitExceeded
 
+# Directorios y base de datos
 basedir = os.path.abspath(os.path.dirname(__file__))
 instance_dir = os.path.join(basedir, "..", "instance")
 os.makedirs(instance_dir, exist_ok=True)
 db_path = os.path.join(instance_dir, "app.db")
 
+# Cargar variables de entorno desde .env usando python-dotenv
+from dotenv import load_dotenv
+env_path = os.path.join(os.path.dirname(basedir), ".env")
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
-
 
 def create_app():
     app = Flask(__name__)
@@ -27,41 +33,43 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
+
+    # Configuración dinámica de CORS
+    # Se lee la variable de entorno CORS_ALLOWED_IPS (generada por el script de instalación)
+    cors_ips = os.environ.get("CORS_ALLOWED_IPS", "")
+    # Se admite que las IPs estén separadas por espacios o comas
+    if "," in cors_ips:
+        ip_list = [ip.strip() for ip in cors_ips.split(",") if ip.strip()]
+    else:
+        ip_list = [ip.strip() for ip in cors_ips.split() if ip.strip()]
+
+    allowed_origins = []
+    for ip in ip_list:
+        allowed_origins.append(f"http://{ip}:3000")
+        allowed_origins.append(f"https://{ip}:3000")
+    # Siempre se asegura que localhost esté incluido
+    if "http://localhost:3000" not in allowed_origins:
+        allowed_origins.append("http://localhost:3000")
+
     CORS(
         app,
         supports_credentials=True,
-        resources={
-            r"/*": {
-                "origins": [
-                    "http://192.168.191.100:3000",
-                    "http://172.18.0.3:3000",
-                    "http://localhost:3000",
-                    "http://10.80.3.10:3000",
-                    "http://10.80.3.200:3000",
-                    "https://10.80.3.200:3000",
-                    "http://10.0.1.100:3000",
-                    "https://10.0.1.100:3000"
-                ]
-            }
-        },
+        resources={r"/*": {"origins": allowed_origins}}
     )
 
     # Configurar Flask-Limiter sin pasar el app en el constructor
     limiter = Limiter(key_func=get_remote_address, default_limits=["800 per minute"])
     limiter.init_app(app)
 
-    # Personalizar la respuesta cuando se exceda el límite
     @app.errorhandler(RateLimitExceeded)
     def ratelimit_handler(e):
         return (
-            jsonify(
-                {"error": "Límite de peticiones excedido. Intente de nuevo más tarde."}
-            ),
+            jsonify({"error": "Límite de peticiones excedido. Intente de nuevo más tarde."}),
             429,
         )
 
     with app.app_context():
-        # registro de blueprints y carga de ejercicios
+        # Registro de blueprints y carga de ejercicios
         from .models import Exercise
         from .proxy import proxy_blueprint
         from .auth import auth_blueprint
@@ -75,25 +83,19 @@ def create_app():
 
         db.create_all()
 
+        # Carga inicial de ejercicios desde exercises.json (si existe)
         if not Exercise.query.first():
             json_path = os.path.join(os.path.dirname(__file__), "exercises.json")
             try:
                 with open(json_path, "r", encoding="utf-8") as f:
-                    # Leemos el contenido bruto
                     file_content = f.read().strip()
-
-                    # Si no hay contenido, evitamos decodificar
                     if not file_content:
                         print(f"El archivo {json_path} está vacío. No se crearon ejercicios.")
                     else:
-                        # Decodificamos el JSON
                         exercises_data = json.loads(file_content)
-
-                        # Verificamos si el JSON decodificado está vacío
                         if not exercises_data:
-                            print("El JSON está vacío (array o diccionario sin datos). No se crearon ejercicios.")
+                            print("El JSON está vacío. No se crearon ejercicios.")
                         else:
-                            # Cargamos cada ejercicio
                             for item in exercises_data:
                                 new_exercise = Exercise(
                                     title=item.get("title", "Sin título"),
@@ -104,7 +106,6 @@ def create_app():
                                 db.session.add(new_exercise)
                             db.session.commit()
                             print("Ejercicios creados exitosamente desde exercises.json")
-
             except FileNotFoundError:
                 print(f"No se encontró el archivo {json_path}. No se crearon ejercicios.")
             except json.JSONDecodeError as e:
