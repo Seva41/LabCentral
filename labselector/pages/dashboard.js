@@ -134,7 +134,7 @@ function Dashboard() {
 
         {/* Panel de administración en tarjeta colapsable */}
         {isAdmin && (
-          <CollapsibleCard title="Panel de Administración" defaultOpen={true}>
+          <CollapsibleCard title="Panel de Administración" defaultOpen={false}>
             <AdminPanel refreshExercises={fetchExercises} />
           </CollapsibleCard>
         )}

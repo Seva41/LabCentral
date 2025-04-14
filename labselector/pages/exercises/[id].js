@@ -7,6 +7,7 @@ import useExerciseData from "@/hooks/useExerciseData";
 import ExerciseHeader from "@/components/exercises/ExerciseHeader";
 import ExerciseQuestions from "@/components/exercises/ExerciseQuestions";
 import AdminPanel from "@/components/exercises/AdminPanel";
+import CollapsibleCard from "@/components/CollapsibleCard";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -140,36 +141,42 @@ export default function ExerciseDetail() {
           </Link>
         </div>
 
+        {/* Panel de administración para crear una nueva pregunta */}
         {isAdmin && (
-          <div className="max-w-3xl mx-auto">
-            <AdminPanel
-              newQuestion={newQuestion}
-              setNewQuestion={setNewQuestion}
-              exerciseZip={exerciseZip}
-              setExerciseZip={setExerciseZip}
-              createQuestion={createQuestion}
-            />
-          </div>
+          <CollapsibleCard title="Panel de Administración" defaultOpen={false}>
+            <div className="max-w-3xl mx-auto">
+              <AdminPanel
+                newQuestion={newQuestion}
+                setNewQuestion={setNewQuestion}
+                exerciseZip={exerciseZip}
+                setExerciseZip={setExerciseZip}
+                createQuestion={createQuestion}
+              />
+            </div>
+          </CollapsibleCard>
         )}
 
-        <div className="max-w-4xl mx-auto">
-          <ExerciseQuestions
-            questions={questions}
-            answers={answers}
-            handleAnswerChange={handleAnswerChange}
-            submitAnswer={submitAnswer}
-            myServerAnswers={myServerAnswers}
-            myGroupScores={myGroupScores}  
-            isAdmin={isAdmin}
-            deleteQuestion={deleteQuestion}
-            editingQuestionId={editingQuestionId}
-            editQuestionData={editQuestionData}
-            startEditingQuestion={startEditingQuestion}
-            cancelEditing={cancelEditing}
-            saveEditedQuestion={saveEditedQuestion}
-            totalScore={totalScore}
-          />
-        </div>
+        {/* Sección de preguntas */}
+        <CollapsibleCard title="Preguntas del Ejercicio" defaultOpen={true}>
+          <div className="max-w-4xl mx-auto">
+            <ExerciseQuestions
+              questions={questions}
+              answers={answers}
+              handleAnswerChange={handleAnswerChange}
+              submitAnswer={submitAnswer}
+              myServerAnswers={myServerAnswers}
+              myGroupScores={myGroupScores}  
+              isAdmin={isAdmin}
+              deleteQuestion={deleteQuestion}
+              editingQuestionId={editingQuestionId}
+              editQuestionData={editQuestionData}
+              startEditingQuestion={startEditingQuestion}
+              cancelEditing={cancelEditing}
+              saveEditedQuestion={saveEditedQuestion}
+              totalScore={totalScore}
+            />
+          </div>
+        </CollapsibleCard>
       </div>
     </div>
   );

@@ -45,7 +45,7 @@ export default function AdminPanel({
   
     return (
       <div className="card shadow space-y-4">
-        <h3 className="text-xl font-semibold">Admin Panel - Crear nueva pregunta</h3>
+        <h3 className="text-xl font-semibold">Crear nueva pregunta</h3>
         <label className="block">
           <span className="text-sm">Texto de la pregunta:</span>
           <input
