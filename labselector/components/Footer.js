@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="footer">
       <div className="relative w-full text-center">
         <span>
-          LabCentral © 2025 - Desarrollado por{' '}
+        LabCentral © 2025 by {' '} is licensed under CC BY-NC-SA 4.0 
           <a
             href="https://sebadinator.com/"
             target="_blank"
