@@ -524,12 +524,21 @@ def add_exercise_with_zip():
         slug = "exercise"
 
     base_dir = os.path.abspath(os.path.dirname(__file__))
-    dockerfiles_dir = os.path.join(base_dir, '..', 'dockerfiles')
-    exercise_dir = os.path.join(dockerfiles_dir, slug)
+    dockerfiles_dir = os.path.abspath(os.path.join(base_dir, '..', 'dockerfiles'))
+    exercise_dir = os.path.abspath(os.path.join(dockerfiles_dir, slug))
+
+    # Validate that exercise_dir is within dockerfiles_dir
+    if not exercise_dir.startswith(dockerfiles_dir):
+        return jsonify({'error': 'Invalid exercise directory'}), 400
 
     os.makedirs(exercise_dir, exist_ok=True)
 
-    zip_path = os.path.join(exercise_dir, secure_filename(zipfile_obj.filename))
+    zip_path = os.path.abspath(os.path.join(exercise_dir, secure_filename(zipfile_obj.filename)))
+
+    # Validate that zip_path is within exercise_dir
+    if not zip_path.startswith(exercise_dir):
+        return jsonify({'error': 'Invalid ZIP file path'}), 400
+
     zipfile_obj.save(zip_path)
     try:
         with zipfile.ZipFile(zip_path, 'r') as zf:
