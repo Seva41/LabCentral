@@ -1,6 +1,7 @@
 import requests
 import re
 from flask import Blueprint, request, jsonify, Response
+import html
 from urllib.parse import urljoin
 from .exercise import decode_token, client
 
@@ -55,7 +56,7 @@ def proxy_to_exercise(exercise_id, path=""):
 
         if 'text/html' in content_type:
             html_content = resp.text
-            proxy_prefix = f"/api/exercise/{exercise_id}/proxy/"
+            proxy_prefix = html.escape(f"/api/exercise/{exercise_id}/proxy/")
 
             # Reescribe URLs absolutas (empiezan con /)
             html_content = re.sub(
@@ -74,7 +75,7 @@ def proxy_to_exercise(exercise_id, path=""):
             # Manejo especial para forms con action=""
             html_content = re.sub(
                 r'action=("|\')\s*\1',
-                rf'action="{proxy_prefix}{path}"',
+                rf'action="{proxy_prefix}{html.escape(path)}"',
                 html_content
             )
 
