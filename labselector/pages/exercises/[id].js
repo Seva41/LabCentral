@@ -50,12 +50,16 @@ export default function ExerciseDetail() {
 
   useEffect(() => {
     if (!id) return;
+    // Define an allow-list of valid exercise IDs
+    const validIds = ["exercise1", "exercise2", "exercise3"]; // Replace with actual valid IDs
+    
     // Validate the `id` parameter
-    const isValidId = /^[a-zA-Z0-9_-]+$/.test(id); // Adjust regex as needed for valid IDs
+    const isValidId = validIds.includes(id);
     if (!isValidId) {
       console.error("Invalid exercise ID:", id);
       return;
     }
+    
     // Consultar el grupo del usuario para este ejercicio
     const fetchGroup = async () => {
       try {
