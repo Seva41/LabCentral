@@ -528,7 +528,10 @@ def add_exercise_with_zip():
     exercise_dir = os.path.abspath(os.path.join(dockerfiles_dir, slug))
 
     # Validate that exercise_dir is within dockerfiles_dir
-    if os.path.commonpath([exercise_dir, dockerfiles_dir]) != dockerfiles_dir:
+    # Normalize paths before validation
+    normalized_dockerfiles_dir = os.path.normpath(dockerfiles_dir)
+    normalized_exercise_dir = os.path.normpath(exercise_dir)
+    if os.path.commonpath([normalized_exercise_dir, normalized_dockerfiles_dir]) != normalized_dockerfiles_dir:
         return jsonify({'error': 'Invalid exercise directory'}), 400
 
     os.makedirs(exercise_dir, exist_ok=True)
