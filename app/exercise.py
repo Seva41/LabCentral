@@ -536,7 +536,7 @@ def add_exercise_with_zip():
     zip_path = os.path.abspath(os.path.join(exercise_dir, secure_filename(zipfile_obj.filename)))
 
     # Validate that zip_path is within exercise_dir
-    if not zip_path.startswith(exercise_dir):
+    if os.path.commonpath([zip_path, exercise_dir]) != exercise_dir:
         return jsonify({'error': 'Invalid ZIP file path'}), 400
 
     zipfile_obj.save(zip_path)
