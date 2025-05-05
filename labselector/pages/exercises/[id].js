@@ -14,7 +14,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export default function ExerciseDetail() {
   const router = useRouter();
   const { id } = router.query;
-  
+
   // Estados y lógica del custom hook
   const {
     exercise,
@@ -48,22 +48,22 @@ export default function ExerciseDetail() {
   // Estado para almacenar la info del grupo del usuario
   const [myGroup, setMyGroup] = useState(null);
 
+  // Lista blanca de IDs válidos
+  const validIds = ["exercise1", "exercise2", "exercise3"]; // Reemplazar con IDs reales
+
+  // Validar y sanitizar antes de ejecutar la lógica en useEffect
+  const isValidId = typeof id === 'string' && validIds.includes(id);
+  const sanitizedId = encodeURIComponent(id);
+
   useEffect(() => {
-    if (!id) return;
-    // Define an allow-list of valid exercise IDs
-    const validIds = ["exercise1", "exercise2", "exercise3"]; // Replace with actual valid IDs
-    
-    // Validate the `id` parameter
-    const isValidId = validIds.includes(id);
     if (!isValidId) {
       console.error("Invalid exercise ID:", id);
       return;
     }
-    
-    // Consultar el grupo del usuario para este ejercicio
+
     const fetchGroup = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/exercise/${id}/my_group`, {
+        const res = await fetch(`${API_URL}/api/exercise/${sanitizedId}/my_group`, {
           credentials: 'include',
         });
         const data = await res.json();
@@ -74,8 +74,10 @@ export default function ExerciseDetail() {
         console.error("Error al obtener grupo:", error);
       }
     };
+
     fetchGroup();
-  }, [id]);
+  }, [id, isValidId, sanitizedId]);
+
 
   if (!exercise) {
     return (
@@ -175,7 +177,7 @@ export default function ExerciseDetail() {
               handleAnswerChange={handleAnswerChange}
               submitAnswer={submitAnswer}
               myServerAnswers={myServerAnswers}
-              myGroupScores={myGroupScores}  
+              myGroupScores={myGroupScores}
               isAdmin={isAdmin}
               deleteQuestion={deleteQuestion}
               editingQuestionId={editingQuestionId}

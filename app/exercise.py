@@ -511,34 +511,36 @@ def add_exercise_with_zip():
     if not user or not user.is_admin:
         return jsonify({'error': 'Permission denied'}), 403
 
-    title = request.form.get('title', '').strip()
-    description = request.form.get('description', '').strip()
-    zipfile_obj = request.files.get('zipfile', None)
+    # --- Datos del formulario ---
+    title        = request.form.get('title', '').strip()
+    description  = request.form.get('description', '').strip()
+    zipfile_obj  = request.files.get('zipfile', None)
 
-    if not title or not zipfile_obj:
-        return jsonify({'error': 'Missing title or zipfile'}), 400
+    if not title or not description or not zipfile_obj:
+        return jsonify({'error': 'Missing title, description or zipfile'}), 400
 
+    # Asignar puerto libre
     port = get_free_port()
-    slug = re.sub(r'[^A-Za-z0-9]+', '_', title.lower()).strip('_')
-    if not slug:
-        slug = "exercise"
 
-    base_dir = os.path.abspath(os.path.dirname(__file__))
+    # --- Generar slug seguro ---
+    raw_slug = re.sub(r'[^A-Za-z0-9]+', '_', title.lower()).strip('_')
+    slug     = secure_filename(raw_slug) or 'exercise'
+
+    # --- Directorios ---
+    base_dir        = os.path.abspath(os.path.dirname(__file__))
     dockerfiles_dir = os.path.abspath(os.path.join(base_dir, '..', 'dockerfiles'))
-    exercise_dir = os.path.abspath(os.path.join(dockerfiles_dir, slug))
+    exercise_dir    = os.path.abspath(os.path.join(dockerfiles_dir, slug))
 
-    # Validate that exercise_dir is within dockerfiles_dir
-    # Normalize paths before validation
-    normalized_dockerfiles_dir = os.path.normpath(dockerfiles_dir)
-    normalized_exercise_dir = os.path.normpath(exercise_dir)
-    if os.path.commonpath([normalized_exercise_dir, normalized_dockerfiles_dir]) != normalized_dockerfiles_dir:
+    # Validar confinamiento
+    if os.path.commonpath([exercise_dir, dockerfiles_dir]) != dockerfiles_dir:
         return jsonify({'error': 'Invalid exercise directory'}), 400
 
     os.makedirs(exercise_dir, exist_ok=True)
 
-    zip_path = os.path.abspath(os.path.join(exercise_dir, secure_filename(zipfile_obj.filename)))
+    # --- Guardar y extraer ZIP ---
+    filename = secure_filename(zipfile_obj.filename)
+    zip_path = os.path.join(exercise_dir, filename)
 
-    # Validate that zip_path is within exercise_dir
     if os.path.commonpath([zip_path, exercise_dir]) != exercise_dir:
         return jsonify({'error': 'Invalid ZIP file path'}), 400
 
@@ -551,6 +553,7 @@ def add_exercise_with_zip():
     finally:
         os.remove(zip_path)
 
+    # --- Crear registro en BD ---
     new_exercise = Exercise(
         title=title,
         description=description,
@@ -560,7 +563,7 @@ def add_exercise_with_zip():
     db.session.add(new_exercise)
     db.session.commit()
 
-    return jsonify({'message': 'Exercise with ZIP added successfully'})
+    return jsonify({'message': 'Exercise with ZIP added successfully'}), 201
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>', methods=['DELETE'])
 def delete_exercise(exercise_id):
