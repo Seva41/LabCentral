@@ -14,9 +14,16 @@ export default function GroupExercisePage() {
   const [existingGroup, setExistingGroup] = useState(null);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !/^[a-zA-Z0-9_-]+$/.test(id)) {
+      console.error("Invalid exercise ID:", id);
+      return;
+    }
   
     const fetchGroup = async () => {
+      if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+        console.error("Invalid exercise ID:", id);
+        return;
+      }
       try {
         const res = await fetch(`${API_URL}/api/exercise/${id}/my_group`, {
           credentials: "include",
@@ -33,6 +40,10 @@ export default function GroupExercisePage() {
     };
   
     const fetchAvailableUsers = async () => {
+      if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+        setMessage("Invalid exercise ID.");
+        return;
+      }
       try {
         const res = await fetch(`${API_URL}/api/exercise/${id}/available_users`, {
           credentials: "include",
@@ -53,6 +64,10 @@ export default function GroupExercisePage() {
   }, [id]);
   
   const handleSubmit = async (e) => {
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+      setMessage("Invalid exercise ID.");
+      return;
+    }
     e.preventDefault();
     if (existingGroup) {
       setMessage("Ya formas parte de un grupo para este ejercicio.");
@@ -78,6 +93,10 @@ export default function GroupExercisePage() {
   };
 
   const handleDisbandGroup = async () => {
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+      setMessage("Invalid exercise ID.");
+      return;
+    }
     try {
       const res = await fetch(`${API_URL}/api/exercise/${id}/group`, {
         method: "DELETE",

@@ -93,7 +93,7 @@ def logout_user():
         container.remove(force=True)
 
     response = make_response(jsonify({"message": "Logged out and containers removed."}))
-    response.set_cookie('session_token', '', expires=0)  # Borrar cookie
+    response.set_cookie('session_token', '', expires=0, secure=True, httponly=True, samesite='Strict')  # Borrar cookie
     return response
 
 

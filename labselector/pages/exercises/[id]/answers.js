@@ -24,6 +24,14 @@ export default function ExerciseAnswers() {
   /* ---------------- helpers ---------------- */
   const fetchAnswers = useCallback(() => {
     if (!id) return;
+    
+    // Validate the `id` parameter to ensure it is a valid numeric ID
+    const idPattern = /^[0-9]+$/; // Adjust the pattern based on expected format
+    if (!idPattern.test(id)) {
+      setError('Invalid exercise ID');
+      return;
+    }
+    
     setLoading(true);
     fetch(`${API_URL}/api/admin/exercise/${id}/answers`, { credentials: 'include' })
       .then(async (r) => {
