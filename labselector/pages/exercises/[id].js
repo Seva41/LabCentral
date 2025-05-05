@@ -50,12 +50,12 @@ export default function ExerciseDetail() {
 
   useEffect(() => {
     if (!id) return;
+    
     // Define an allow-list of valid exercise IDs
     const validIds = ["exercise1", "exercise2", "exercise3"]; // Replace with actual valid IDs
     
     // Validate the `id` parameter
-    const isValidId = validIds.includes(id);
-    if (!isValidId) {
+    if (!validIds.includes(id)) {
       console.error("Invalid exercise ID:", id);
       return;
     }
@@ -63,7 +63,8 @@ export default function ExerciseDetail() {
     // Consultar el grupo del usuario para este ejercicio
     const fetchGroup = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/exercise/${id}/my_group`, {
+        const sanitizedId = encodeURIComponent(id); // Sanitize the `id` parameter
+        const res = await fetch(`${API_URL}/api/exercise/${sanitizedId}/my_group`, {
           credentials: 'include',
         });
         const data = await res.json();
