@@ -39,7 +39,8 @@ def proxy_to_exercise(exercise_id, path=""):
     if not container_ip:
         return jsonify({"error": "No container IP found"}), 500
 
-    internal_url = f"http://{container_ip}:5000/{path}"
+    safe_path = html.escape(path)
+    internal_url = f"http://{container_ip}:5000/{safe_path}"
 
     try:
         resp = requests.request(
@@ -63,7 +64,7 @@ def proxy_to_exercise(exercise_id, path=""):
 
             # Prepare safe rewriting
             proxy_prefix = f"/api/exercise/{exercise_id}/proxy/"
-            safe_path = quote(path, safe="")  # percent-encode the path
+            encoded_path = quote(safe_path, safe="")  # percent-encode the escaped path
 
             # Parse HTML safely
             soup = BeautifulSoup(html_content, "html.parser")
@@ -80,7 +81,7 @@ def proxy_to_exercise(exercise_id, path=""):
 
             # Rewrite form actions
             for form in soup.find_all("form"):
-                form["action"] = proxy_prefix + safe_path
+                form["action"] = proxy_prefix + encoded_path
 
             # Define a stricter bleach Cleaner
             ALLOWED_TAGS = bleach.sanitizer.ALLOWED_TAGS + ["form", "input", "button"]
