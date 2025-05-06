@@ -1,6 +1,6 @@
 {
   "name": "labselector",
-  "version": "1.5.2",
+  "version": "1.7.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
