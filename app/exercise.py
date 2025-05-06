@@ -266,7 +266,10 @@ def stop_exercise(exercise_id):
     except docker.errors.NotFound:
         return jsonify({'error': 'Container not found'}), 404
     except docker.errors.APIError as e:
-        return jsonify({'error': f'Failed to stop container: {str(e)}'}), 500
+        current_app.logger.error(f"Failed to stop container: {str(e)}")
+        return jsonify({'error': 'An internal error occurred while stopping the container.'}), 500
+
+
 
 
 # -------------------------
@@ -549,7 +552,8 @@ def add_exercise_with_zip():
         with zipfile.ZipFile(zip_path, 'r') as zf:
             safe_extract(zf, exercise_dir)
     except Exception as e:
-        return jsonify({'error': 'Invalid or corrupted ZIP file: ' + str(e)}), 400
+        current_app.logger.error("Error processing ZIP file: %s", str(e))
+        return jsonify({'error': 'Invalid or corrupted ZIP file'}), 400
     finally:
         os.remove(zip_path)
 
