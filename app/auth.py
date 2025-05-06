@@ -70,7 +70,7 @@ def login():
         'session_token',
         token,
         httponly=True,
-        samesite='None',
+        samesite='Lax',
         secure=True
     )
 

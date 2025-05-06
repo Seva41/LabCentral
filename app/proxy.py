@@ -31,7 +31,8 @@ def proxy_to_exercise(exercise_id, path=""):
     try:
         container = client.containers.get(container_name)
     except Exception as e:
-        return jsonify({"error": f"Container not found: {str(e)}"}), 404
+        current_app.logger.error(f"RequestException occurred: {str(e)}")
+        return jsonify({"error": "An internal error occurred"}), 404
 
     container_ip = get_container_ip(container_name)
     if not container_ip:
