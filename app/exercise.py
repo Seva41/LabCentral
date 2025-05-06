@@ -549,7 +549,8 @@ def add_exercise_with_zip():
         with zipfile.ZipFile(zip_path, 'r') as zf:
             safe_extract(zf, exercise_dir)
     except Exception as e:
-        return jsonify({'error': 'Invalid or corrupted ZIP file: ' + str(e)}), 400
+        current_app.logger.error("Error processing ZIP file: %s", str(e))
+        return jsonify({'error': 'Invalid or corrupted ZIP file'}), 400
     finally:
         os.remove(zip_path)
 
