@@ -1,9 +1,10 @@
 import requests
 import re
-from flask import Blueprint, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response, current_app
 import html
 from urllib.parse import urljoin
 from .exercise import decode_token, client
+import bleach
 
 proxy_blueprint = Blueprint('proxy', __name__)
 
@@ -30,7 +31,8 @@ def proxy_to_exercise(exercise_id, path=""):
     try:
         container = client.containers.get(container_name)
     except Exception as e:
-        return jsonify({"error": f"Container not found: {str(e)}"}), 404
+        current_app.logger.error(f"RequestException occurred: {str(e)}")
+        return jsonify({"error": "An internal error occurred"}), 404
 
     container_ip = get_container_ip(container_name)
     if not container_ip:
@@ -79,10 +81,19 @@ def proxy_to_exercise(exercise_id, path=""):
                 html_content
             )
 
+            # Limpia el HTML para evitar XSS
+            html_content = bleach.clean(
+                html_content,
+                tags=bleach.sanitizer.ALLOWED_TAGS + ["form", "input", "button"],
+                attributes=bleach.sanitizer.ALLOWED_ATTRIBUTES,
+                protocols=bleach.sanitizer.ALLOWED_PROTOCOLS,
+                strip=True
+            )
+
             content = html_content.encode('utf-8')
 
         return Response(content, resp.status_code, headers=[(name, value) for name, value in headers if name.lower() not in excluded_headers])
 
     except requests.exceptions.RequestException as e:
-        app.logger.error(f"RequestException occurred: {str(e)}")
+        current_app.logger.error(f"RequestException occurred: {str(e)}")
         return jsonify({"error": "An internal error occurred"}), 502
