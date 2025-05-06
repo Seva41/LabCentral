@@ -84,4 +84,5 @@ def proxy_to_exercise(exercise_id, path=""):
         return Response(content, resp.status_code, headers=[(name, value) for name, value in headers if name.lower() not in excluded_headers])
 
     except requests.exceptions.RequestException as e:
-        return jsonify({"error": str(e)}), 502
+        app.logger.error(f"RequestException occurred: {str(e)}")
+        return jsonify({"error": "An internal error occurred"}), 502
