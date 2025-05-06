@@ -248,7 +248,7 @@ def start_exercise(exercise_id):
             'proxy_url': f'/api/exercise/{exercise_id}/proxy'
         })
     except docker.errors.APIError as e:
-        current_app.logger.error(f"Failed to stop container: {str(e)}")
+        current_app.logger.error(f"Failed to start container: {str(e)}")
         return jsonify({'error': 'An internal error occurred while starting the container.'}), 500
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>/stop', methods=['POST'])
