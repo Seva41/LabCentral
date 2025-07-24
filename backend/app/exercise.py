@@ -1,6 +1,7 @@
 import jwt
 from flask import Blueprint, jsonify, request, current_app
 import docker
+from docker.errors import DockerException
 import os
 import re
 import zipfile
@@ -20,7 +21,11 @@ from .models import (
 )
  
 exercise_blueprint = Blueprint('exercise', __name__)
-client = docker.from_env()
+try:
+    client = docker.from_env()
+except DockerException:
+    client = None
+    current_app.logger.warning("Docker daemon no disponible; operaciones Docker deshabilitadas")
 
 def decode_token():
     """
@@ -186,6 +191,9 @@ def get_exercise_status(exercise_id):
 
 @exercise_blueprint.route('/api/exercise/<int:exercise_id>/start', methods=['POST'])
 def start_exercise(exercise_id):
+    if client is None:
+        return jsonify({'error': 'Docker daemon no disponible'}), 503
+
     decoded = decode_token()
     if not decoded:
         return jsonify({'error': 'Unauthorized'}), 401
