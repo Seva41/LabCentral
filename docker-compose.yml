@@ -1,34 +1,33 @@
 networks:
   lab_app_net:
-    name: lab_app_net
     driver: bridge
 services:
   webapp:
     build:
-      context: .
+      context: ./backend
+    env_file:
+      - .env
     ports:
       - "5001:5001"
     volumes:
-      - .:/app
-      - ./dockerfiles:/app/dockerfiles
+      - ./backend:/app
+      - ./backend/dockerfiles:/app/dockerfiles
       - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - FLASK_ENV=development
     privileged: true
     networks:
       - lab_app_net
 
   frontend:
     build:
-      context: ./labselector
+      context: ./frontend/labselector
+    env_file:
+      - .env
     ports:
       - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:5001
     volumes:
-      - ./labselector:/frontend
+      - ./frontend/labselector:/frontend
       - /frontend/node_modules
-    command: "npm run dev"
+    command: npm run dev
     working_dir: /frontend
     networks:
       - lab_app_net

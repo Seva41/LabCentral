@@ -1,36 +1,29 @@
+version: "3.8"
 networks:
   lab_app_net:
-    name: lab_app_net
     driver: bridge
 services:
   webapp:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.prod
+    env_file:
+      - .env.prod
     ports:
       - "5001:5001"
-    environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=replace-with-production-secret
-    volumes:
-      - ./dockerfiles:/app/dockerfiles
-      - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - lab_app_net
     restart: always
 
   frontend:
     build:
-      context: ./labselector
+      context: ./frontend/labselector
       dockerfile: Dockerfile.prod
-      args:
-        NEXT_PUBLIC_API_URL: http://10.80.3.10:5001
+    env_file:
+      - .env.prod
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://10.80.3.10:5001
-    command: "npm run start"
+    command: npm run start
     networks:
       - lab_app_net
     restart: always

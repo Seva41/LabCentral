@@ -1,10 +1,12 @@
 import os
 import json
+import jwt
+from datetime import datetime
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_cors import CORS
 from flask_migrate import Migrate
+from flask_cors import CORS                    # <–– importa CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_limiter.errors import RateLimitExceeded
@@ -21,30 +23,16 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = "replace-this-with-a-strong-secret"
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "replace-this-with-a-strong-secret")
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
 
     db.init_app(app)
     migrate.init_app(app, db)
     bcrypt.init_app(app)
-    CORS(
-        app,
-        supports_credentials=True,
-        resources={
-            r"/*": {
-                "origins": [
-                    "http://192.168.191.100:3000",
-                    "http://172.18.0.3:3000",
-                    "http://localhost:3000",
-                    "http://10.80.3.10:3000",
-                    "http://10.80.3.200:3000",
-                    "https://10.80.3.200:3000",
-                    "http://10.0.1.100:3000",
-                    "https://10.0.1.100:3000"
-                ]
-            }
-        },
-    )
+    # Permitir CORS desde el frontend en localhost:3000 con credenciales
+    CORS(app,
+         resources={r"/api/*": {"origins": ["http://localhost:3000"]}},
+         supports_credentials=True)
 
     # Configurar Flask-Limiter sin pasar el app en el constructor
     limiter = Limiter(key_func=get_remote_address, default_limits=["800 per minute"])
@@ -60,6 +48,18 @@ def create_app():
             429,
         )
 
+    # --- Verificación de licencia ---
+    license_key = os.getenv("LICENSE_KEY")
+    if not license_key:
+        raise RuntimeError("LICENSE_KEY no configurada")
+    try:
+        data = jwt.decode(license_key, app.config["SECRET_KEY"], algorithms=["HS256"])
+        if datetime.utcnow().timestamp() > data.get("exp", 0):
+            raise RuntimeError("Licencia expirada")
+        app.config["LICENSE_DATA"] = data
+    except Exception as e:
+        raise RuntimeError(f"Licencia inválida: {e}")
+
     with app.app_context():
         # registro de blueprints y carga de ejercicios
         from .models import Exercise
@@ -67,11 +67,12 @@ def create_app():
         from .auth import auth_blueprint
         from .exercise import exercise_blueprint
         from .question_blueprint import question_blueprint
+        from .license_blueprint import license_bp
 
         app.register_blueprint(auth_blueprint)
         app.register_blueprint(exercise_blueprint)
         app.register_blueprint(proxy_blueprint)
-        app.register_blueprint(question_blueprint)
+        app.register_blueprint(license_bp)
 
         db.create_all()
 

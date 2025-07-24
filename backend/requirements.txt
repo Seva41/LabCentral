@@ -6,7 +6,8 @@ flask_bcrypt
 flask_migrate
 flask-limiter
 docker
-pyjwt
+PyJWT>=2.6.0
 bleach
 gunicorn
 bs4
+psycopg2-binary

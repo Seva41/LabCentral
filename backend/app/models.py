@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from . import db
 from flask_bcrypt import generate_password_hash, check_password_hash
+from datetime import datetime
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -72,3 +73,14 @@ class GroupExerciseAnswer(db.Model):
     question_id = db.Column(db.Integer, db.ForeignKey('exercise_question.id'), nullable=False)
     answer_text = db.Column(db.Text, nullable=False)
     score = db.Column(db.Float, nullable=True)
+
+class License(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.Text, nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    valid_until = db.Column(db.DateTime, nullable=False)
+
+    user = db.relationship('User', backref='licenses')
+
+    def is_valid(self):
+        return self.valid_until > datetime.utcnow()

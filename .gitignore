@@ -8,4 +8,10 @@ __pycache__/
 myenv/
 
 # Cápsulas (para mantener secreto)
-/dockerfiles/*/
+backend/dockerfiles/*
+backend/app/__pycache__/
+backend/instance/*
+backend/migrations/
+
+.env
+.env.prod

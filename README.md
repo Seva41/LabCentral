@@ -108,8 +108,8 @@ cd labcentral
 En caso de que sea necesario, ingresar a la carpeta de frontend (ajuste la ruta según corresponda) y ejecutar:
 
 ```bash
-cd labselector
-npm i
+ cd frontend/labselector
+ npm i
 ```
 
 Esto instalará todas las dependencias requeridas por el proyecto Next.js.
@@ -227,7 +227,7 @@ Para crear un usuario de prueba (por ejemplo, un administrador) en la base de da
 1. Asegúrese de que el contenedor del backend esté corriendo (p.ej., `labcentral-backend`).
 2. Abra una terminal en dicho contenedor:
    ```bash
-   docker-compose exec backend bash
+   docker-compose exec webapp bash
    ```
 3. Ingrese al shell de Flask:
    ```bash
