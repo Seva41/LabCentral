@@ -2,7 +2,7 @@ import { useRouter } from 'next/router';
 import { useEffect, useState, useCallback } from 'react';
 
 /**
- * Vista de evaluación (sólo administradores) con soporte Dark Mode.
+ * Vista de evaluación (sólo administradores) con soporte Dark Mode.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;

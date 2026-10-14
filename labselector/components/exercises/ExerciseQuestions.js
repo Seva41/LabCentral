@@ -33,7 +33,7 @@ export default function ExerciseQuestions({
           return (
             <div
               key={q.id}
-              className="border-b border-white border-opacity-20 pb-4 mb-4"
+              className="border-b border-white/20 pb-4 mb-4"
             >
               <input
                 className="input"
@@ -111,7 +111,7 @@ export default function ExerciseQuestions({
         return (
           <div
             key={q.id}
-            className="border-b border-white border-opacity-20 pb-4 mb-4 last:mb-0 last:border-b-0"
+            className="border-b border-white/20 pb-4 mb-4 last:mb-0 last:border-b-0"
           >
             <p className="font-medium">
               {q.text}{" "}
@@ -236,7 +236,7 @@ function MultipleChoiceQuestion({
   handleAnswerChange,
   submitAnswer,
 }) {
-  let parsedChoices = [];
+  let parsedChoices;
   try {
     parsedChoices = q.choices ? JSON.parse(q.choices) : [];
     if (!Array.isArray(parsedChoices)) parsedChoices = [];
