@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const encodePathSegment = (value) => encodeURIComponent(String(value ?? ""));
 
 export default function useExerciseData(exerciseId, router) {
+  const safeExerciseId = encodePathSegment(exerciseId);
   /* -------------------- estados base -------------------- */
   const [exercise, setExercise] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -58,28 +60,28 @@ export default function useExerciseData(exerciseId, router) {
     };
 
     const fetchExercise = () =>
-      fetch(`${API_URL}/api/exercise/${exerciseId}`, {
+      fetch(`${API_URL}/api/exercise/${safeExerciseId}`, {
         credentials: "include",
       })
         .then((r) => r.json())
         .then((d) => !d.error && setExercise(d));
 
     const fetchQuestions = () =>
-      fetch(`${API_URL}/api/exercise/${exerciseId}/questions`, {
+      fetch(`${API_URL}/api/exercise/${safeExerciseId}/questions`, {
         credentials: "include",
       })
         .then((r) => r.json())
         .then((d) => !d.error && setQuestions(d));
 
     const fetchMyAnswers = () =>
-      fetch(`${API_URL}/api/exercise/${exerciseId}/my_answers`, {
+      fetch(`${API_URL}/api/exercise/${safeExerciseId}/my_answers`, {
         credentials: "include",
       })
         .then((r) => r.json())
         .then((d) => setMyServerAnswers(d));
 
     const fetchGroupScores = () =>
-      fetch(`${API_URL}/api/exercise/${exerciseId}/my_group_scores`, {
+      fetch(`${API_URL}/api/exercise/${safeExerciseId}/my_group_scores`, {
         credentials: "include",
       })
         .then((r) => r.json())
@@ -95,7 +97,7 @@ export default function useExerciseData(exerciseId, router) {
   /* ---------------- contenedor docker ------------------ */
   const startExercise = async () => {
     setContainerStatus("starting");
-    const r = await fetch(`${API_URL}/api/exercise/${exerciseId}/start`, {
+    const r = await fetch(`${API_URL}/api/exercise/${safeExerciseId}/start`, {
       method: "POST",
       credentials: "include",
     });
@@ -115,7 +117,7 @@ export default function useExerciseData(exerciseId, router) {
 
   const stopExercise = async () => {
     setContainerStatus("stopping");
-    const r = await fetch(`${API_URL}/api/exercise/${exerciseId}/stop`, { 
+    const r = await fetch(`${API_URL}/api/exercise/${safeExerciseId}/stop`, { 
       method: "POST", 
       credentials: "include" 
     });
@@ -128,7 +130,7 @@ export default function useExerciseData(exerciseId, router) {
 
   async function checkContainerStatus() {
     try {
-      const resp = await fetch(`${API_URL}/api/exercise/${exerciseId}/status`, {
+      const resp = await fetch(`${API_URL}/api/exercise/${safeExerciseId}/status`, {
         credentials: "include",
       });
       const data = await resp.json();
@@ -149,7 +151,7 @@ export default function useExerciseData(exerciseId, router) {
     if (!text.trim()) return alert("Respuesta vacía");
 
     const r = await fetch(
-      `${API_URL}/api/exercise/${exerciseId}/question/${qid}/answer`,
+      `${API_URL}/api/exercise/${safeExerciseId}/question/${encodePathSegment(qid)}/answer`,
       {
         method: "POST",
         credentials: "include",
@@ -188,7 +190,7 @@ export default function useExerciseData(exerciseId, router) {
     };
 
     try {
-      const res = await fetch(`${API_URL}/api/exercise/${exerciseId}/questions`, {
+      const res = await fetch(`${API_URL}/api/exercise/${safeExerciseId}/questions`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -229,7 +231,7 @@ export default function useExerciseData(exerciseId, router) {
     if (!confirm("¿Estás seguro de eliminar esta pregunta?")) return;
     try {
       const res = await fetch(
-        `${API_URL}/api/exercise/${exerciseId}/question/${questionId}`,
+        `${API_URL}/api/exercise/${safeExerciseId}/question/${encodePathSegment(questionId)}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -269,7 +271,7 @@ export default function useExerciseData(exerciseId, router) {
     }
     try {
       const res = await fetch(
-        `${API_URL}/api/exercise/${exerciseId}/question/${editingQuestionId}`,
+        `${API_URL}/api/exercise/${safeExerciseId}/question/${encodePathSegment(editingQuestionId)}`,
         {
           method: "PATCH",
           credentials: "include",
