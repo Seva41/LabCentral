@@ -1,10 +1,12 @@
-venv/
-app/__pycache__/
-instance/*
+.env
+backups/*
+!backups/.gitkeep
 *.db
-migrations/
-exercises/*
+app/data/
+*.dump
+*.tar.gz
 __pycache__/
+<<<<<<< HEAD
 myenv/
 
 # Cápsulas (para mantener secreto)
@@ -15,3 +17,8 @@ backend/migrations/
 
 .env
 .env.prod
+=======
+*.py[cod]
+.venv/
+.pytest_cache/
+>>>>>>> 39c64e2 (feat: replace legacy LabCentral app with LabCentral 2 CTF platform)

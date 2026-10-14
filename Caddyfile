@@ -1,0 +1,33 @@
+{
+	servers {
+		max_header_size 16KiB
+		timeouts {
+			read_header 10s
+			read_body_idle 20s
+			write_idle 30s
+			idle 2m
+		}
+	}
+	grace_period 25s
+}
+
+{$PUBLIC_DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 6MiB
+	}
+	reverse_proxy {
+		dynamic a app 8000 {
+			refresh 3s
+			resolvers 127.0.0.11
+		}
+		lb_policy least_conn
+		lb_try_duration 2s
+		lb_try_interval 250ms
+		transport http {
+			dial_timeout 3s
+			response_header_timeout 20s
+			keepalive 30s
+		}
+	}
+}

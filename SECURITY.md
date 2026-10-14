@@ -1,12 +1,14 @@
-# Security Policy
+# Política de seguridad
 
-## Supported Versions
+## Versiones compatibles
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.7.0   | :white_check_mark: |
-| < 1.7.0 | :x:                |
+| Versión | Estado |
+| --- | --- |
+| LabCentral 2 (rama `main`) | Compatible |
+| Versiones anteriores | Sin soporte |
 
-## Reporting a Vulnerability
+## Reportar una vulnerabilidad
 
-Open an issue on the repository and/or contact me on [seba@sebadinator.com](mailto:seba@sebadinator.com).
+No publiques vulnerabilidades explotables en un issue público. Envía los detalles a [seba@sebadinator.com](mailto:seba@sebadinator.com) e incluye pasos para reproducir el problema, impacto observado y una forma segura de contacto. Evita adjuntar datos reales de usuarios o secretos.
+
+LabCentral 2 no ejecuta código enviado por participantes ni crea máquinas vulnerables. Los reportes sobre infraestructura de laboratorio externa deben indicar claramente qué componente está afectado.

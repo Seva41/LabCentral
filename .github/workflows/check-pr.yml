@@ -1,61 +1,42 @@
-name: Pull Request Checks
-permissions:
-  contents: read
+name: LabCentral 2 checks
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18, 20]
-
     steps:
-      # 1. Checkout del repositorio
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # 2. Cache de módulos Node.js
-      - name: Cache Node.js modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('labselector/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      # 3. Configuración de Node.js para el frontend
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-
-      # 4. Instalar dependencias del frontend
-      - name: Install frontend dependencies
-        working-directory: labselector
-        run: npm install
-
-      # 5. Ejecutar linter en el frontend
-      - name: Run linter (frontend)
-        working-directory: labselector
-        run: npm run lint
-
-      # 6. Configurar Python
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      # 7. Instalar dependencias del backend
-      - name: Install backend dependencies
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r requirements.txt
+      - name: Check Python syntax
+        run: python -m compileall -q app migrations
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check browser JavaScript syntax
+        run: node --check app/static/app.js
+
+      - name: Check shell scripts
+        run: |
+          for script in scripts/*.sh; do
+            sh -n "$script"
+          done
+
+      - name: Validate Docker Compose configuration
+        run: docker compose --env-file .env.example config --quiet

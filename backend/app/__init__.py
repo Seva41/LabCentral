@@ -1,3 +1,4 @@
+<<<<<<< HEAD:backend/app/__init__.py
 import os
 import json
 import jwt
@@ -112,3 +113,6 @@ def create_app():
                 print(f"Error al decodificar JSON: {str(e)}. No se crearon ejercicios.")
 
     return app
+=======
+
+>>>>>>> 39c64e2 (feat: replace legacy LabCentral app with LabCentral 2 CTF platform):app/__init__.py
