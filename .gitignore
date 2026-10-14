@@ -1,24 +1,67 @@
+# Operating system and editor files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Environment files and local secrets
 .env
-backups/*
-!backups/.gitkeep
+.env.*
+!.env.example
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+myenv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Node.js and package manager files
+node_modules/
+.npm/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js and frontend build output
+.next/
+out/
+dist/
+build/
+coverage/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# Databases, dumps, archives and local application data
 *.db
-app/data/
+*.sqlite
+*.sqlite3
 *.dump
 *.tar.gz
-__pycache__/
-<<<<<<< HEAD
-myenv/
+app/data/
+backend/app/data/
+backend/instance/
 
-# Cápsulas (para mantener secreto)
+# Backups are local; retain the directory placeholder
+backups/*
+!backups/.gitkeep
+
+# Generated or machine-specific backend files
 backend/dockerfiles/*
-backend/app/__pycache__/
-backend/instance/*
 backend/migrations/
-
-.env
-.env.prod
-=======
-*.py[cod]
-.venv/
-.pytest_cache/
->>>>>>> 39c64e2 (feat: replace legacy LabCentral app with LabCentral 2 CTF platform)
