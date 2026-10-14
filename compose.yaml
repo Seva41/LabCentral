@@ -38,7 +38,9 @@ services:
     networks: [backend]
 
   migrate:
-    build: .
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     command: ["alembic", "upgrade", "head"]
     restart: "no"
     logging: *default-logging
@@ -55,7 +57,9 @@ services:
     networks: [backend]
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     logging: *default-logging
     init: true

@@ -1,18 +1,3 @@
-<<<<<<< HEAD:backend/requirements.txt
-flask
-flask_sqlalchemy
-flask_login
-flask_cors
-flask_bcrypt
-flask_migrate
-flask-limiter
-docker
-PyJWT>=2.6.0
-bleach
-gunicorn
-bs4
-psycopg2-binary
-=======
 fastapi>=0.116,<1
 uvicorn[standard]>=0.35,<1
 SQLAlchemy>=2.0,<3
@@ -20,4 +5,3 @@ psycopg[binary]>=3.2,<4
 redis>=5,<9
 alembic>=1.14,<2
 python-multipart>=0.0.20,<1
->>>>>>> 39c64e2 (feat: replace legacy LabCentral app with LabCentral 2 CTF platform):requirements.txt

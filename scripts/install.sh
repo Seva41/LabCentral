@@ -16,7 +16,8 @@ if [ ! -f .env ]; then
   created_env=true
   set_env() {
     key=$1 value=$2
-    sed -i "s|^${key}=.*|${key}=${value}|" .env
+    sed -i.bak "s|^${key}=.*|${key}=${value}|" .env
+    rm -f .env.bak
   }
   set_env POSTGRES_PASSWORD "$(openssl rand -hex 32)"
   set_env FLAG_PEPPER "$(openssl rand -hex 32)"
@@ -31,7 +32,7 @@ else
   chmod 600 .env
 fi
 
-if grep -Eq '^(POSTGRES_PASSWORD|FLAG_PEPPER|SETUP_KEY)=(|replace-with.*)$' .env; then
+if grep -Eq '^(POSTGRES_PASSWORD|FLAG_PEPPER|SETUP_KEY)=($|replace-with.*)$' .env; then
   fail "revisa .env: hay secretos pendientes de configurar."
 fi
 database_name=$(sed -n 's/^POSTGRES_DB=//p' .env | tail -n 1)

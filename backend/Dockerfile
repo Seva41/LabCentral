@@ -1,32 +1,17 @@
-<<<<<<< HEAD:backend/Dockerfile
-# Dockerfile
-=======
->>>>>>> 39c64e2 (feat: replace legacy LabCentral app with LabCentral 2 CTF platform):Dockerfile
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-<<<<<<< HEAD:backend/Dockerfile
-# Install build dependencies for psycopg2
-RUN apt-get update \
- && apt-get install -y --no-install-recommends gcc libpq-dev \
- && rm -rf /var/lib/apt/lists/*
-
-# Install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-=======
 WORKDIR /srv/labcentral
-COPY requirements.txt ./
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt \
     && groupadd --system labcentral \
     && useradd --system --gid labcentral --home-dir /srv/labcentral labcentral \
     && install -d -m 0755 -o labcentral -g labcentral /var/lib/labcentral/assets/objects
->>>>>>> 39c64e2 (feat: replace legacy LabCentral app with LabCentral 2 CTF platform):Dockerfile
 
-COPY app ./app
+COPY backend/app ./app
 COPY alembic.ini ./alembic.ini
 COPY migrations ./migrations
 USER labcentral:labcentral

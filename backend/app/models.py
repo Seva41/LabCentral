@@ -1,11 +1,4 @@
-<<<<<<< HEAD:backend/app/models.py
-from flask_sqlalchemy import SQLAlchemy
-from . import db
-from flask_bcrypt import generate_password_hash, check_password_hash
-from datetime import datetime
-=======
 from __future__ import annotations
->>>>>>> 39c64e2 (feat: replace legacy LabCentral app with LabCentral 2 CTF platform):app/models.py
 
 from datetime import datetime
 
@@ -14,25 +7,6 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import JSON
 
 
-<<<<<<< HEAD:backend/app/models.py
-class GroupExerciseAnswer(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    group_id = db.Column(db.Integer, db.ForeignKey('exercise_group.id'), nullable=False)
-    question_id = db.Column(db.Integer, db.ForeignKey('exercise_question.id'), nullable=False)
-    answer_text = db.Column(db.Text, nullable=False)
-    score = db.Column(db.Float, nullable=True)
-
-class License(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    key = db.Column(db.Text, nullable=False, unique=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    valid_until = db.Column(db.DateTime, nullable=False)
-
-    user = db.relationship('User', backref='licenses')
-
-    def is_valid(self):
-        return self.valid_until > datetime.utcnow()
-=======
 class Base(DeclarativeBase):
     pass
 
@@ -193,4 +167,3 @@ class EventCheckpoint(Base):
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     snapshot: Mapped[dict] = mapped_column(JSON)
->>>>>>> 39c64e2 (feat: replace legacy LabCentral app with LabCentral 2 CTF platform):app/models.py
