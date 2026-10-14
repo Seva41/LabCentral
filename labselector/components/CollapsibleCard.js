@@ -8,7 +8,7 @@ export default function CollapsibleCard({ title, children, defaultOpen = true })
   const toggleOpen = () => setIsOpen((prev) => !prev);
 
   return (
-    <div className="mb-4 rounded-lg shadow-lg bg-white bg-opacity-10 backdrop-blur-lg border border-white border-opacity-20">
+    <div className="mb-4 rounded-lg shadow-lg bg-white/10 backdrop-blur-lg border border-white/20">
       <div className="flex items-center justify-between px-4 py-3 cursor-pointer" onClick={toggleOpen}>
         <h2 className="text-lg font-semibold">{title}</h2>
         <button>

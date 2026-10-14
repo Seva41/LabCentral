@@ -86,7 +86,7 @@ export default function AdminPanel({
   
         {/* Múltiple choice: manejo de opciones */}
         {newQuestion.question_type === "multiple_choice" && (
-          <div className="p-2 bg-white bg-opacity-10 border border-white border-opacity-20 rounded">
+          <div className="p-2 bg-white/10 border border-white/20 rounded">
             <h4 className="font-semibold mb-2">Opciones</h4>
             {newQuestion.choicesArray.map((opt, idx) => (
               <div key={opt.id} className="flex items-center mb-2">
